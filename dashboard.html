@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}仪表盘 - Telegram客服机器人管理系统{% endblock %}
+
+{% block content %}
+<h2><i class="fas fa-tachometer-alt"></i> 仪表盘</h2>
+<p class="text-muted">欢迎使用Telegram客服机器人管理系统，这里是总览信息。</p>
+
+<div class="row mt-4">
+    <!-- 统计卡片 -->
+    <div class="col-md-4">
+        <div class="card stat-card">
+            <div class="card-body">
+                <i class="fas fa-users fa-3x text-primary mb-3"></i>
+                <div class="number">{{ total_users }}</div>
+                <div class="label">总用户数</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card">
+            <div class="card-body">
+                <i class="fas fa-comments fa-3x text-success mb-3"></i>
+                <div class="number">{{ total_messages }}</div>
+                <div class="label">总消息数</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card">
+            <div class="card-body">
+                <i class="fas fa-user-plus fa-3x text-info mb-3"></i>
+                <div class="number">{{ today_users }}</div>
+                <div class="label">今日新增用户</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <!-- 最近用户 -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-users"></i> 最近加入的用户
+            </div>
+            <div class="card-body">
+                {% if recent_users %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>用户名</th>
+                                <th>姓名</th>
+                                <th>加入时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in recent_users %}
+                            <tr>
+                                <td>{{ user.user_id }}</td>
+                                <td>{% if user.username %}@{{ user.username }}{% else %}无{% endif %}</td>
+                                <td>{{ user.first_name }} {% if user.last_name %}{{ user.last_name }}{% endif %}</td>
+                                <td>{{ user.join_date }}</td>
+                                <td>
+                                    <a href="{{ url_for('user_detail', user_id=user.user_id) }}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-eye"></i> 查看
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-center">暂无用户数据</p>
+                {% endif %}
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('users') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-list"></i> 查看所有用户
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 最近消息 -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-comments"></i> 最近消息
+            </div>
+            <div class="card-body">
+                {% if recent_messages %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>用户</th>
+                                <th>类型</th>
+                                <th>内容</th>
+                                <th>时间</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for msg in recent_messages %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('user_detail', user_id=msg.user_id) }}">
+                                        {% if msg.username %}@{{ msg.username }}{% else %}{{ msg.user_id }}{% endif %}
+                                    </a>
+                                </td>
+                                <td>
+                                    {% if msg.message_type == 'text' %}
+                                        <span class="badge bg-primary">文本</span>
+                                    {% elif msg.message_type == 'photo' %}
+                                        <span class="badge bg-success">图片</span>
+                                    {% elif msg.message_type == 'document' %}
+                                        <span class="badge bg-info">文件</span>
+                                    {% elif msg.message_type == 'voice' %}
+                                        <span class="badge bg-warning">语音</span>
+                                    {% elif msg.message_type == 'video' %}
+                                        <span class="badge bg-danger">视频</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">其他</span>
+                                    {% endif %}
+                                    
+                                    {% if msg.is_from_admin %}
+                                        <span class="badge bg-dark">管理员</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ msg.content[:30] }}{% if msg.content|length > 30 %}...{% endif %}</td>
+                                <td>{{ msg.timestamp }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-center">暂无消息数据</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // 每30秒刷新一次最新消息
+    function refreshMessages() {
+        setTimeout(function() {
+            location.reload();
+        }, 30000);
+    }
+    
+    $(document).ready(function() {
+        refreshMessages();
+    });
+</script>
+{% endblock %} 

@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}用户管理 - Telegram客服机器人管理系统{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-users"></i> 用户管理</h2>
+    <span class="badge bg-primary fs-5">总用户数: {{ total }}</span>
+</div>
+
+<!-- 搜索栏 -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" action="{{ url_for('users') }}">
+            <div class="input-group">
+                <input type="text" class="form-control" placeholder="搜索用户ID、用户名或姓名..." name="search" value="{{ search }}">
+                <button class="btn btn-primary" type="submit">
+                    <i class="fas fa-search"></i> 搜索
+                </button>
+                {% if search %}
+                <a href="{{ url_for('users') }}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> 清除
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 用户列表 -->
+<div class="card">
+    <div class="card-header">
+        <i class="fas fa-list"></i> 用户列表
+    </div>
+    <div class="card-body">
+        {% if users %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>用户名</th>
+                        <th>姓名</th>
+                        <th>加入时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>{{ user.user_id }}</td>
+                        <td>{% if user.username %}@{{ user.username }}{% else %}无{% endif %}</td>
+                        <td>{{ user.first_name }} {% if user.last_name %}{{ user.last_name }}{% endif %}</td>
+                        <td>{{ user.join_date }}</td>
+                        <td>
+                            <a href="{{ url_for('user_detail', user_id=user.user_id) }}" class="btn btn-sm btn-primary">
+                                <i class="fas fa-eye"></i> 查看
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- 分页 -->
+        {% if total_pages > 1 %}
+        <nav aria-label="Page navigation">
+            <ul class="pagination">
+                {% if page > 1 %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('users', page=page-1, search=search) }}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for p in range(1, total_pages+1) %}
+                <li class="page-item {% if p == page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('users', page=p, search=search) }}">{{ p }}</a>
+                </li>
+                {% endfor %}
+                
+                {% if page < total_pages %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('users', page=page+1, search=search) }}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        
+        {% else %}
+        <p class="text-center">未找到用户数据</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

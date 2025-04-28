@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}数据统计 - Telegram客服机器人管理系统{% endblock %}
+
+{% block extra_css %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<h2><i class="fas fa-chart-bar"></i> 数据统计</h2>
+<p class="text-muted">查看用户和消息的统计数据。</p>
+
+<div class="row mt-4">
+    <!-- 消息类型统计 -->
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-chart-pie"></i> 消息类型分布
+            </div>
+            <div class="card-body">
+                <canvas id="messageTypeChart" width="400" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 每日消息统计 -->
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-chart-line"></i> 每日消息量
+            </div>
+            <div class="card-body">
+                <canvas id="dailyMessagesChart" width="400" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- 活跃用户排名 -->
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-trophy"></i> 活跃用户排名 (Top 10)
+            </div>
+            <div class="card-body">
+                {% if active_users %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>排名</th>
+                                <th>用户ID</th>
+                                <th>用户名</th>
+                                <th>姓名</th>
+                                <th>消息数量</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in active_users %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td>{{ user.user_id }}</td>
+                                <td>{% if user.username %}@{{ user.username }}{% else %}无{% endif %}</td>
+                                <td>{{ user.first_name }} {% if user.last_name %}{{ user.last_name }}{% endif %}</td>
+                                <td>
+                                    <span class="badge bg-primary">{{ user.message_count }}</span>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('user_detail', user_id=user.user_id) }}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-eye"></i> 查看
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-center">暂无用户数据</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // 准备数据
+    const messageTypeData = {
+        labels: [
+            {% for type in message_types %}
+                "{{ type.message_type }}",
+            {% endfor %}
+        ],
+        datasets: [{
+            label: '消息数量',
+            data: [
+                {% for type in message_types %}
+                    {{ type.count }},
+                {% endfor %}
+            ],
+            backgroundColor: [
+                'rgb(255, 99, 132)',
+                'rgb(54, 162, 235)',
+                'rgb(255, 205, 86)',
+                'rgb(75, 192, 192)',
+                'rgb(153, 102, 255)',
+                'rgb(255, 159, 64)'
+            ],
+            hoverOffset: 4
+        }]
+    };
+    
+    const dailyMessagesData = {
+        labels: [
+            {% for day in daily_messages %}
+                "{{ day.date }}",
+            {% endfor %}
+        ],
+        datasets: [{
+            label: '消息数量',
+            data: [
+                {% for day in daily_messages %}
+                    {{ day.count }},
+                {% endfor %}
+            ],
+            fill: false,
+            borderColor: 'rgb(75, 192, 192)',
+            tension: 0.1
+        }]
+    };
+    
+    // 创建图表
+    document.addEventListener('DOMContentLoaded', function() {
+        // 消息类型饼图
+        const messageTypeCtx = document.getElementById('messageTypeChart').getContext('2d');
+        new Chart(messageTypeCtx, {
+            type: 'pie',
+            data: messageTypeData,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    },
+                    title: {
+                        display: true,
+                        text: '消息类型分布'
+                    }
+                }
+            }
+        });
+        
+        // 每日消息折线图
+        const dailyMessagesCtx = document.getElementById('dailyMessagesChart').getContext('2d');
+        new Chart(dailyMessagesCtx, {
+            type: 'line',
+            data: dailyMessagesData,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    },
+                    title: {
+                        display: true,
+                        text: '每日消息量趋势'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %} 
