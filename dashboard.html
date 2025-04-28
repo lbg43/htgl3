@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram客服机器人管理系统</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            font-size: 0.875rem;
+            background-color: #f8f9fa;
+        }
+        .feather {
+            width: 16px;
+            height: 16px;
+        }
+        .sidebar {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 100;
+            padding: 48px 0 0;
+            box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+            background-color: #343a40;
+        }
+        @media (max-width: 767.98px) {
+            .sidebar {
+                top: 5rem;
+            }
+        }
+        .sidebar-sticky {
+            height: calc(100vh - 48px);
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+        .sidebar .nav-link {
+            font-weight: 500;
+            color: rgba(255, 255, 255, .75);
+            padding: 0.5rem 1rem;
+            margin-bottom: 5px;
+        }
+        .sidebar .nav-link:hover {
+            color: white;
+            background-color: rgba(255, 255, 255, .1);
+        }
+        .sidebar .nav-link.active {
+            color: white;
+            background-color: #007bff;
+        }
+        .sidebar .nav-link .feather {
+            margin-right: 4px;
+        }
+        .navbar-brand {
+            padding-top: .75rem;
+            padding-bottom: .75rem;
+            background-color: rgba(0, 0, 0, .25);
+            box-shadow: inset -1px 0 0 rgba(0, 0, 0, .25);
+            font-size: 1rem;
+        }
+        .navbar .navbar-toggler {
+            top: .25rem;
+            right: 1rem;
+        }
+        .navbar .form-control {
+            padding: .75rem 1rem;
+        }
+        .main-content {
+            padding: 20px;
+        }
+        .stat-card {
+            border-radius: 10px;
+            border: none;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            transition: transform 0.3s;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+        .card-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        .table-container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .message-box {
+            background-color: #f1f1f1;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+        .user-message {
+            background-color: #e3f2fd;
+        }
+        .admin-message {
+            background-color: #e8f5e9;
+        }
+        .chat-container {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
+        <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="#">
+            <i class="fas fa-robot"></i> Telegram客服机器人
+        </a>
+        <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="w-100"></div>
+        <div class="navbar-nav">
+            <div class="nav-item text-nowrap">
+                <a class="nav-link px-3" href="index.html">退出登录</a>
+            </div>
+        </div>
+    </header>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- 侧边栏 -->
+            <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <div class="text-center mb-4 text-white">
+                        <h5>管理系统</h5>
+                    </div>
+                    <hr class="text-white">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link active" id="nav-dashboard" href="#" onclick="switchPage('dashboard')">
+                                <i class="fas fa-tachometer-alt me-2"></i> 仪表盘
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="nav-users" href="#" onclick="switchPage('users')">
+                                <i class="fas fa-users me-2"></i> 用户管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="nav-statistics" href="#" onclick="switchPage('statistics')">
+                                <i class="fas fa-chart-bar me-2"></i> 统计分析
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="nav-settings" href="#" onclick="switchPage('settings')">
+                                <i class="fas fa-cog me-2"></i> 系统设置
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- 主要内容区域 -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+                <!-- Flash 消息容器 -->
+                <div id="flash-messages"></div>
+
+                <!-- 仪表盘内容 -->
+                <div id="dashboard-content" class="page-content">
+                    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                        <h1 class="h2"><i class="fas fa-tachometer-alt"></i> 仪表盘</h1>
+                        <div class="btn-toolbar mb-2 mb-md-0">
+                            <div class="btn-group me-2">
+                                <button type="button" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-download"></i> 导出数据
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="showFlashMessage('数据已刷新', 'info')">
+                                    <i class="fas fa-sync"></i> 刷新
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 统计卡片 -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card stat-card bg-primary text-white">
+                                <div class="card-body text-center">
+                                    <div class="card-icon">
+                                        <i class="fas fa-users"></i>
+                                    </div>
+                                    <h3>248</h3>
+                                    <p class="card-text">用户总数</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card stat-card bg-success text-white">
+                                <div class="card-body text-center">
+                                    <div class="card-icon">
+                                        <i class="fas fa-comments"></i>
+                                    </div>
+                                    <h3>1,562</h3>
+                                    <p class="card-text">消息总数</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card stat-card bg-warning text-white">
+                                <div class="card-body text-center">
+                                    <div class="card-icon">
+                                        <i class="fas fa-user-plus"></i>
+                                    </div>
+                                    <h3>12</h3>
+                                    <p class="card-text">今日新增用户</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card stat-card bg-info text-white">
+                                <div class="card-body text-center">
+                                    <div class="card-icon">
+                                        <i class="fas fa-reply"></i>
+                                    </div>
+                                    <h3>98.5%</h3>
+                                    <p class="card-text">回复率</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 最近用户和消息 -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="table-container">
+                                <h5 class="mb-3"><i class="fas fa-user-clock"></i> 最近用户</h5>
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>用户ID</th>
+                                                <th>用户名</th>
+                                                <th>加入时间</th>
+                                                <th>操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>12345678</td>
+                                                <td>@user1</td>
+                                                <td>2023-11-05 10:23</td>
+                                                <td><a href="#" onclick="showUserDetail('12345678')" class="btn btn-sm btn-primary">查看</a></td>
+                                            </tr>
+                                            <tr>
+                                                <td>23456789</td>
+                                                <td>@user2</td>
+                                                <td>2023-11-05 09:15</td>
+                                                <td><a href="#" onclick="showUserDetail('23456789')" class="btn btn-sm btn-primary">查看</a></td>
+                                            </tr>
+                                            <tr>
+                                                <td>34567890</td>
+                                                <td>@user3</td>
+                                                <td>2023-11-04 18:42</td>
+                                                <td><a href="#" onclick="showUserDetail('34567890')" class="btn btn-sm btn-primary">查看</a></td>
+                                            </tr>
+                                            <tr>
+                                                <td>45678901</td>
+                                                <td>@user4</td>
+                                                <td>2023-11-04 15:37</td>
+                                                <td><a href="#" onclick="showUserDetail('45678901')" class="btn btn-sm btn-primary">查看</a></td>
+                                            </tr>
+                                            <tr>
+                                                <td>56789012</td>
+                                                <td>@user5</td>
+                                                <td>2023-11-04 11:20</td>
+                                                <td><a href="#" onclick="showUserDetail('56789012')" class="btn btn-sm btn-primary">查看</a></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="text-center mt-3">
+                                    <a href="#" onclick="switchPage('users')" class="btn btn-outline-primary btn-sm">查看全部用户</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 最近消息 -->
+                        <div class="col-md-6">
+                            <div class="table-container">
+                                <h5 class="mb-3"><i class="fas fa-envelope-open-text"></i> 最近消息</h5>
+                                <div class="message-box user-message">
+                                    <div class="d-flex justify-content-between">
+                                        <strong><i class="fas fa-user"></i> @user1</strong>
+                                        <span class="text-muted">2023-11-05 10:23</span>
+                                    </div>
+                                    <div class="mt-2">
+                                        请问你们的产品支持哪些语言？
+                                    </div>
+                                </div>
+                                <div class="message-box admin-message">
+                                    <div class="d-flex justify-content-between">
+                                        <strong><i class="fas fa-user-shield"></i> 管理员</strong>
+                                        <span class="text-muted">2023-11-05 10:25</span>
+                                    </div>
+                                    <div class="mt-2">
+                                        您好，我们的产品目前支持中文、英文、日文和韩文四种语言。
+                                    </div>
+                                </div>
+                                <div class="message-box user-message">
+                                    <div class="d-flex justify-content-between">
+                                        <strong><i class="fas fa-user"></i> @user2</strong>
+                                        <span class="text-muted">2023-11-05 09:15</span>
+                                    </div>
+                                    <div class="mt-2">
+                                        我需要咨询一下退款政策。
+                                    </div>
+                                </div>
+                                <div class="message-box user-message">
+                                    <div class="d-flex justify-content-between">
+                                        <strong><i class="fas fa-user"></i> @user3</strong>
+                                        <span class="text-muted">2023-11-04 18:42</span>
+                                    </div>
+                                    <div class="mt-2">
+                                        <span class="badge bg-success">图片</span>
+                                        用户发送了一张截图
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 用户管理内容 -->
+                <div id="users-content" class="page-content" style="display: none;">
+                    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                        <h1 class="h2"><i class="fas fa-users"></i> 用户管理</h1>
+                        <div class="btn-toolbar mb-2 mb-md-0">
+                            <form class="d-flex">
+                                <input class="form-control me-2" type="search" placeholder="搜索用户" aria-label="Search">
+                                <button class="btn btn-outline-success" type="button" onclick="searchUsers()">搜索</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>用户ID</th>
+                                        <th>用户名</th>
+                                        <th>姓名</th>
+                                        <th>加入时间</th>
+                                        <th>消息数</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>12345678</td>
+                                        <td>@user1</td>
+                                        <td>张三</td>
+                                        <td>2023-11-05 10:23</td>
+                                        <td>15</td>
+                                        <td><a href="#" onclick="showUserDetail('12345678')" class="btn btn-sm btn-primary">查看</a></td>
+                                    </tr>
+                                    <tr>
+                                        <td>23456789</td>
+                                        <td>@user2</td>
+                                        <td>李四</td>
+                                        <td>2023-11-05 09:15</td>
+                                        <td>8</td>
+                                        <td><a href="#" onclick="showUserDetail('23456789')" class="btn btn-sm btn-primary">查看</a></td>
+                                    </tr>
+                                    <tr>
+                                        <td>34567890</td>
+                                        <td>@user3</td>
+                                        <td>王五</td>
+                                        <td>2023-11-04 18:42</td>
+                                        <td>12</td>
+                                        <td><a href="#" onclick="showUserDetail('34567890')" class="btn btn-sm btn-primary">查看</a></td>
+                                    </tr>
+                                    <tr>
+                                        <td>45678901</td>
+                                        <td>@user4</td>
+                                        <td>赵六</td>
+                                        <td>2023-11-04 15:37</td>
+                                        <td>5</td>
+                                        <td><a href="#" onclick="showUserDetail('45678901')" class="btn btn-sm btn-primary">查看</a></td>
+                                    </tr>
+                                    <tr>
+                                        <td>56789012</td>
+                                        <td>@user5</td>
+                                        <td>钱七</td>
+                                        <td>2023-11-04 11:20</td>
+                                        <td>20</td>
+                                        <td><a href="#" onclick="showUserDetail('56789012')" class="btn btn-sm btn-primary">查看</a></td>
+                                    </tr>
+                                    <tr>
+                                        <td>67890123</td>
+                                        <td>@user6</td>
+                                        <td>孙八</td>
+                                        <td>2023-11-03 22:15</td>
+                                        <td>3</td>
+                                        <td><a href="#" onclick="showUserDetail('67890123')" class="btn btn-sm btn-primary">查看</a></td>
+                                    </tr>
+                                    <tr>
+                                        <td>78901234</td>
+                                        <td>@user7</td>
+                                        <td>周九</td>
+                                        <td>2023-11-03 16:08</td>
+                                        <td>7</td>
+                                        <td><a href="#" onclick="showUserDetail('78901234')" class="btn btn-sm btn-primary">查看</a></td>
+                                    </tr>
+                                    <tr>
+                                        <td>89012345</td>
+                                        <td>@user8</td>
+                                        <td>吴十</td>
+                                        <td>2023-11-03 12:45</td>
+                                        <td>9</td>
+                                        <td><a href="#" onclick="showUserDetail('89012345')" class="btn btn-sm btn-primary">查看</a></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- 分页 -->
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination justify-content-center">
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#" tabindex="-1" aria-disabled="true">上一页</a>
+                                </li>
+                                <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                                <li class="page-item"><a class="page-link" href="#">2</a></li>
+                                <li class="page-item"><a class="page-link" href="#">3</a></li>
+                                <li class="page-item">
+                                    <a class="page-link" href="#">下一页</a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+
+                <!-- 统计分析内容 -->
+                <div id="statistics-content" class="page-content" style="display: none;">
+                    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                        <h1 class="h2"><i class="fas fa-chart-bar"></i> 统计分析</h1>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="table-container">
+                                <h5 class="mb-3">消息类型统计</h5>
+                                <div class="table-responsive">
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>消息类型</th>
+                                                <th>数量</th>
+                                                <th>占比</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>文本</td>
+                                                <td>1050</td>
+                                                <td>67.2%</td>
+                                            </tr>
+                                            <tr>
+                                                <td>图片</td>
+                                                <td>320</td>
+                                                <td>20.5%</td>
+                                            </tr>
+                                            <tr>
+                                                <td>文件</td>
+                                                <td>95</td>
+                                                <td>6.1%</td>
+                                            </tr>
+                                            <tr>
+                                                <td>语音</td>
+                                                <td>75</td>
+                                                <td>4.8%</td>
+                                            </tr>
+                                            <tr>
+                                                <td>视频</td>
+                                                <td>22</td>
+                                                <td>1.4%</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="mt-3 text-center">
+                                    <div class="chart-placeholder bg-light p-5">
+                                        <i class="fas fa-chart-pie fa-3x text-primary mb-3"></i>
+                                        <p>消息类型分布饼图</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="table-container">
+                                <h5 class="mb-3">每日消息统计</h5>
+                                <div class="table-responsive">
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>日期</th>
+                                                <th>消息数</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>2023-11-05</td>
+                                                <td>156</td>
+                                            </tr>
+                                            <tr>
+                                                <td>2023-11-04</td>
+                                                <td>143</td>
+                                            </tr>
+                                            <tr>
+                                                <td>2023-11-03</td>
+                                                <td>189</td>
+                                            </tr>
+                                            <tr>
+                                                <td>2023-11-02</td>
+                                                <td>167</td>
+                                            </tr>
+                                            <tr>
+                                                <td>2023-11-01</td>
+                                                <td>138</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="mt-3 text-center">
+                                    <div class="chart-placeholder bg-light p-5">
+                                        <i class="fas fa-chart-line fa-3x text-success mb-3"></i>
+                                        <p>每日消息趋势图</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="table-container">
+                                <h5 class="mb-3">活跃用户排名</h5>
+                                <div class="table-responsive">
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>排名</th>
+                                                <th>用户ID</th>
+                                                <th>用户名</th>
+                                                <th>姓名</th>
+                                                <th>消息数</th>
+                                                <th>操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>1</td>
+                                                <td>56789012</td>
+                                                <td>@user5</td>
+                                                <td>钱七</td>
+                                                <td>98</td>
+                                                <td><a href="#" onclick="showUserDetail('56789012')" class="btn btn-sm btn-primary">查看</a></td>
+                                            </tr>
+                                            <tr>
+                                                <td>2</td>
+                                                <td>12345678</td>
+                                                <td>@user1</td>
+                                                <td>张三</td>
+                                                <td>83</td>
+                                                <td><a href="#" onclick="showUserDetail('12345678')" class="btn btn-sm btn-primary">查看</a></td>
+                                            </tr>
+                                            <tr>
+                                                <td>3</td>
+                                                <td>34567890</td>
+                                                <td>@user3</td>
+                                                <td>王五</td>
+                                                <td>65</td>
+                                                <td><a href="#" onclick="showUserDetail('34567890')" class="btn btn-sm btn-primary">查看</a></td>
+                                            </tr>
+                                            <tr>
+                                                <td>4</td>
+                                                <td>23456789</td>
+                                                <td>@user2</td>
+                                                <td>李四</td>
+                                                <td>58</td>
+                                                <td><a href="#" onclick="showUserDetail('23456789')" class="btn btn-sm btn-primary">查看</a></td>
+                                            </tr>
+                                            <tr>
+                                                <td>5</td>
+                                                <td>89012345</td>
+                                                <td>@user8</td>
+                                                <td>吴十</td>
+                                                <td>47</td>
+                                                <td><a href="#" onclick="showUserDetail('89012345')" class="btn btn-sm btn-primary">查看</a></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 系统设置内容 -->
+                <div id="settings-content" class="page-content" style="display: none;">
+                    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                        <h1 class="h2"><i class="fas fa-cog"></i> 系统设置</h1>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="table-container">
+                                <h5 class="mb-3">基本设置</h5>
+                                <form id="basic-settings-form">
+                                    <div class="mb-3">
+                                        <label for="admin-username" class="form-label">管理员用户名</label>
+                                        <input type="text" class="form-control" id="admin-username" value="admin">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="admin-password" class="form-label">管理员密码</label>
+                                        <input type="password" class="form-control" id="admin-password">
+                                    </div>
+                                    <div class="d-grid">
+                                        <button type="button" class="btn btn-primary">保存</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="table-container">
+                                <h5 class="mb-3">机器人设置</h5>
+                                <form id="bot-settings-form">
+                                    <div class="mb-3">
+                                        <label for="bot-token" class="form-label">Bot Token</label>
+                                        <input type="text" class="form-control" id="bot-token">
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="auto-reply" checked>
+                                            <label class="form-check-label" for="auto-reply">启用自动回复</label>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="welcome-message" class="form-label">欢迎消息</label>
+                                        <textarea class="form-control" id="welcome-message" rows="3">欢迎使用我们的客服机器人，请问有什么可以帮助您的？</textarea>
+                                    </div>
+                                    <div class="d-grid">
+                                        <button type="button" class="btn btn-primary">保存</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 用户详情内容 -->
+                <div id="user-detail-content" class="page-content" style="display: none;">
+                    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                        <div>
+                            <h1 class="h2"><i class="fas fa-user"></i> 用户详情</h1>
+                            <div class="text-muted">用户ID: <span id="user-detail-id">-</span></div>
+                        </div>
+                        <div class="btn-toolbar mb-2 mb-md-0">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="switchPage('users')">
+                                <i class="fas fa-arrow-left"></i> 返回用户列表
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">用户资料</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="text-center mb-3">
+                                        <i class="fas fa-user-circle fa-6x text-primary"></i>
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>用户ID:</strong> <span id="detail-user-id">12345678</span>
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>用户名:</strong> <span id="detail-username">@user1</span>
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>姓名:</strong> <span id="detail-name">张三</span>
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>加入时间:</strong> <span id="detail-join-date">2023-11-05 10:23</span>
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>消息数:</strong> <span id="detail-message-count">15</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">发送消息</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form id="send-message-form">
+                                        <div class="mb-3">
+                                            <textarea class="form-control" id="message" rows="3" placeholder="输入要发送的消息..."></textarea>
+                                        </div>
+                                        <div class="text-end">
+                                            <button type="button" class="btn btn-primary" onclick="sendMessage()">
+                                                <i class="fas fa-paper-plane"></i> 发送
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                            
+                            <div class="card mt-3">
+                                <div class="card-header">
+                                    <h5 class="mb-0">消息历史</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="chat-container">
+                                        <div class="message-box user-message">
+                                            <div class="d-flex justify-content-between">
+                                                <strong><i class="fas fa-user"></i> @user1</strong>
+                                                <span class="text-muted">2023-11-05 10:23</span>
+                                            </div>
+                                            <div class="mt-2">
+                                                请问你们的产品支持哪些语言？
+                                            </div>
+                                        </div>
+                                        <div class="message-box admin-message">
+                                            <div class="d-flex justify-content-between">
+                                                <strong><i class="fas fa-user-shield"></i> 管理员</strong>
+                                                <span class="text-muted">2023-11-05 10:25</span>
+                                            </div>
+                                            <div class="mt-2">
+                                                您好，我们的产品目前支持中文、英文、日文和韩文四种语言。
+                                            </div>
+                                        </div>
+                                        <div class="message-box user-message">
+                                            <div class="d-flex justify-content-between">
+                                                <strong><i class="fas fa-user"></i> @user1</strong>
+                                                <span class="text-muted">2023-11-05 10:30</span>
+                                            </div>
+                                            <div class="mt-2">
+                                                谢谢，我还想了解一下价格方面的信息。
+                                            </div>
+                                        </div>
+                                        <div class="message-box admin-message">
+                                            <div class="d-flex justify-content-between">
+                                                <strong><i class="fas fa-user-shield"></i> 管理员</strong>
+                                                <span class="text-muted">2023-11-05 10:32</span>
+                                            </div>
+                                            <div class="mt-2">
+                                                我们有不同的套餐可供选择，基础版每月98元，标准版每月198元，专业版每月298元。每个套餐包含的功能不同，您可以访问我们的官网查看详细的套餐对比。
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 显示不同页面内容的函数
+        function switchPage(pageName) {
+            // 隐藏所有内容
+            document.querySelectorAll('.page-content').forEach(content => {
+                content.style.display = 'none';
+            });
+            
+            // 移除所有导航项的active类
+            document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            // 显示选定的内容
+            if (pageName === 'dashboard') {
+                document.getElementById('dashboard-content').style.display = 'block';
+                document.getElementById('nav-dashboard').classList.add('active');
+            } else if (pageName === 'users') {
+                document.getElementById('users-content').style.display = 'block';
+                document.getElementById('nav-users').classList.add('active');
+            } else if (pageName === 'statistics') {
+                document.getElementById('statistics-content').style.display = 'block';
+                document.getElementById('nav-statistics').classList.add('active');
+            } else if (pageName === 'settings') {
+                document.getElementById('settings-content').style.display = 'block';
+                document.getElementById('nav-settings').classList.add('active');
+            }
+        }
+        
+        // 显示用户详情
+        function showUserDetail(userId) {
+            // 隐藏所有内容
+            document.querySelectorAll('.page-content').forEach(content => {
+                content.style.display = 'none';
+            });
+            
+            // 显示用户详情内容
+            document.getElementById('user-detail-content').style.display = 'block';
+            
+            // 设置用户ID（在实际应用中，这里应该通过AJAX获取用户详情）
+            document.getElementById('user-detail-id').textContent = userId;
+            document.getElementById('detail-user-id').textContent = userId;
+            
+            // 模拟数据填充
+            const userDetails = {
+                '12345678': { username: '@user1', name: '张三', joinDate: '2023-11-05 10:23', messageCount: 15 },
+                '23456789': { username: '@user2', name: '李四', joinDate: '2023-11-05 09:15', messageCount: 8 },
+                '34567890': { username: '@user3', name: '王五', joinDate: '2023-11-04 18:42', messageCount: 12 },
+                '45678901': { username: '@user4', name: '赵六', joinDate: '2023-11-04 15:37', messageCount: 5 },
+                '56789012': { username: '@user5', name: '钱七', joinDate: '2023-11-04 11:20', messageCount: 20 }
+            };
+            
+            if (userDetails[userId]) {
+                document.getElementById('detail-username').textContent = userDetails[userId].username;
+                document.getElementById('detail-name').textContent = userDetails[userId].name;
+                document.getElementById('detail-join-date').textContent = userDetails[userId].joinDate;
+                document.getElementById('detail-message-count').textContent = userDetails[userId].messageCount;
+            }
+        }
+        
+        // 发送消息
+        function sendMessage() {
+            const messageText = document.getElementById('message').value;
+            if (messageText.trim() === '') {
+                showFlashMessage('消息内容不能为空', 'warning');
+                return;
+            }
+            
+            // 在真实系统中，这里会发送AJAX请求
+            showFlashMessage('消息发送成功', 'success');
+            
+            // 添加到消息历史
+            const chatContainer = document.querySelector('#user-detail-content .chat-container');
+            const now = new Date();
+            const timeString = now.toLocaleString('zh-CN');
+            
+            const adminMessage = document.createElement('div');
+            adminMessage.className = 'message-box admin-message';
+            adminMessage.innerHTML = `
+                <div class="d-flex justify-content-between">
+                    <strong><i class="fas fa-user-shield"></i> 管理员</strong>
+                    <span class="text-muted">${timeString}</span>
+                </div>
+                <div class="mt-2">
+                    ${messageText}
+                </div>
+            `;
+            
+            chatContainer.appendChild(adminMessage);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            document.getElementById('message').value = '';
+        }
+        
+        // 搜索用户
+        function searchUsers() {
+            const searchText = document.querySelector('#users-content input[type="search"]').value;
+            showFlashMessage(`正在搜索: ${searchText}`, 'info');
+            // 这里应该是实际的搜索逻辑，现在只是示例
+        }
+        
+        // 显示Flash消息
+        function showFlashMessage(message, type) {
+            const flashContainer = document.getElementById('flash-messages');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            flashContainer.appendChild(alertDiv);
+            
+            // 自动关闭
+            setTimeout(() => {
+                const alert = new bootstrap.Alert(alertDiv);
+                alert.close();
+            }, 3000);
+        }
+        
+        // 页面加载时默认显示仪表盘
+        document.addEventListener('DOMContentLoaded', function() {
+            switchPage('dashboard');
+        });
+    </script>
+</body>
+</html> 
