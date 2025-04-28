@@ -488,42 +488,51 @@
                     
                     <div class="row">
                         <div class="col-md-6">
-                            <div class="table-container">
-                                <h5 class="mb-3">基本设置</h5>
-                                <form id="basic-settings-form">
-                                    <div class="mb-3">
-                                        <label for="admin-username" class="form-label">管理员用户名</label>
-                                        <input type="text" class="form-control" id="admin-username" value="admin">
-                                    </div>
-                                    <div class="d-grid">
-                                        <button type="button" class="btn btn-primary" onclick="saveBasicSettings()">保存</button>
-                                    </div>
-                                </form>
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <i class="fas fa-user-cog"></i> 基本设置
+                                </div>
+                                <div class="card-body">
+                                    <form id="basic-settings-form">
+                                        <div class="mb-3">
+                                            <label for="username" class="form-label">管理员用户名</label>
+                                            <input type="text" class="form-control" id="username" placeholder="管理员用户名">
+                                            <div class="form-text">修改后需要重新登录</div>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">保存基本设置</button>
+                                    </form>
+                                </div>
                             </div>
                         </div>
-                        
                         <div class="col-md-6">
-                            <div class="table-container">
-                                <h5 class="mb-3">机器人设置</h5>
-                                <form id="bot-settings-form">
-                                    <div class="mb-3">
-                                        <label for="bot-token" class="form-label">Bot Token</label>
-                                        <input type="text" class="form-control" id="bot-token">
-                                    </div>
-                                    <div class="mb-3">
-                                        <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox" id="auto-reply" checked>
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <i class="fab fa-telegram"></i> 机器人设置
+                                </div>
+                                <div class="card-body">
+                                    <form id="bot-settings-form">
+                                        <div class="mb-3">
+                                            <label for="bot-token" class="form-label">Telegram Bot Token</label>
+                                            <input type="text" class="form-control" id="bot-token" placeholder="输入您的Telegram Bot Token">
+                                            <div class="form-text">从BotFather获取的机器人Token</div>
+                                        </div>
+                                        <div class="mb-3 form-check">
+                                            <input type="checkbox" class="form-check-input" id="auto-reply">
                                             <label class="form-check-label" for="auto-reply">启用自动回复</label>
                                         </div>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="welcome-message" class="form-label">欢迎消息</label>
-                                        <textarea class="form-control" id="welcome-message" rows="3">欢迎使用我们的客服机器人，请问有什么可以帮助您的？</textarea>
-                                    </div>
-                                    <div class="d-grid">
-                                        <button type="button" class="btn btn-primary" onclick="saveBotSettings()">保存</button>
-                                    </div>
-                                </form>
+                                        <div class="mb-3">
+                                            <label for="welcome-message" class="form-label">欢迎消息</label>
+                                            <textarea class="form-control" id="welcome-message" rows="3" placeholder="输入新用户的欢迎消息"></textarea>
+                                            <div class="form-text">用户首次使用机器人时发送的欢迎消息</div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="auto-reply-message" class="form-label">自动回复消息</label>
+                                            <textarea class="form-control" id="auto-reply-message" rows="3" placeholder="输入自动回复消息"></textarea>
+                                            <div class="form-text">用户发送消息时的自动回复内容</div>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">保存机器人设置</button>
+                                    </form>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1568,16 +1577,16 @@
         // 保存基本设置
         async function saveBasicSettings() {
             try {
-                const adminUsername = getSafeElement('admin-username');
+                const username = getSafeElement('username');
                 
-                if (!adminUsername) {
+                if (!username) {
                     showFlashMessage('未找到管理员用户名输入框', 'danger');
                     return;
                 }
                 
-                const username = adminUsername.value.trim();
+                const usernameValue = username.value.trim();
                 
-                if (!username) {
+                if (!usernameValue) {
                     showFlashMessage('请输入管理员用户名', 'danger');
                     return;
                 }
@@ -1592,7 +1601,7 @@
                 const response = await fetchAPI('/api/settings/basic', {
                     method: 'POST',
                     body: JSON.stringify({
-                        username: username
+                        username: usernameValue
                     })
                 });
                 
@@ -1610,8 +1619,8 @@
                 showFlashMessage('基本设置已保存', 'success');
                 
                 // 更新本地存储的用户名
-                localStorage.setItem('username', username);
-                document.getElementById('current-username').textContent = username;
+                localStorage.setItem('username', usernameValue);
+                document.getElementById('current-username').textContent = usernameValue;
             } catch (error) {
                 // 恢复按钮状态
                 const saveButton = document.querySelector('#basic-settings-form button');
@@ -1631,8 +1640,9 @@
                 const botToken = getSafeElement('bot-token');
                 const autoReply = getSafeElement('auto-reply');
                 const welcomeMessage = getSafeElement('welcome-message');
+                const autoReplyMessage = getSafeElement('auto-reply-message');
                 
-                if (!botToken || !autoReply || !welcomeMessage) {
+                if (!botToken || !autoReply || !welcomeMessage || !autoReplyMessage) {
                     showFlashMessage('未找到机器人设置表单元素', 'danger');
                     return;
                 }
@@ -1640,6 +1650,7 @@
                 const token = botToken.value.trim();
                 const enableAutoReply = autoReply.checked;
                 const welcomeMsg = welcomeMessage.value.trim();
+                const autoReplyMsg = autoReplyMessage.value.trim();
                 
                 // 显示保存中状态
                 const saveButton = document.querySelector('#bot-settings-form button');
@@ -1653,7 +1664,8 @@
                     body: JSON.stringify({
                         bot_token: token || undefined,
                         auto_reply: enableAutoReply,
-                        welcome_message: welcomeMsg
+                        welcome_message: welcomeMsg,
+                        auto_reply_message: autoReplyMsg
                     })
                 });
                 
@@ -1682,53 +1694,31 @@
             }
         }
 
-        // 加载当前系统设置
+        // 加载系统设置
         async function loadSettings() {
             try {
-                console.log("正在加载系统设置...");
-                const adminUsername = getSafeElement('admin-username');
-                const botToken = getSafeElement('bot-token');
-                const autoReply = getSafeElement('auto-reply');
-                const welcomeMessage = getSafeElement('welcome-message');
-                
-                if (!adminUsername || !autoReply || !welcomeMessage) {
-                    console.error('未找到设置表单元素');
-                    return;
-                }
-                
-                // 显示加载状态
-                showFlashMessage('正在加载设置...', 'info', 1000);
-                
                 const response = await fetchAPI('/api/settings');
                 
-                if (!response || !response.success) {
-                    console.error('获取设置失败:', response ? response.message : '网络错误');
-                    showFlashMessage('加载设置失败，将使用默认值', 'warning');
-                    return;
-                }
-                
-                const settings = response.settings;
-                
-                // 填充表单
-                if (settings.admin_username) {
-                    adminUsername.value = settings.admin_username;
-                }
-                
-                if (autoReply) {
+                if (response.success) {
+                    const settings = response.settings;
+                    
+                    // 基本设置
+                    document.getElementById('username').value = settings.admin_username || '';
+                    
+                    // 机器人设置
+                    const autoReply = document.getElementById('auto-reply');
+                    const welcomeMessage = document.getElementById('welcome-message');
+                    const autoReplyMessage = document.getElementById('auto-reply-message');
+                    
                     autoReply.checked = settings.auto_reply !== false;
+                    welcomeMessage.value = settings.welcome_message || '';
+                    autoReplyMessage.value = settings.auto_reply_message || '';
+                } else {
+                    showFlashMessage('加载设置失败：' + response.message, 'danger');
                 }
-                
-                if (welcomeMessage && settings.welcome_message) {
-                    welcomeMessage.value = settings.welcome_message;
-                }
-                
-                // Bot Token不会从服务器返回（安全考虑），如果本地存储中有，可以使用
-                // 但一般不会显示现有token
-                
-                console.log("系统设置加载完成");
             } catch (error) {
-                console.error('加载设置时出错:', error);
-                showFlashMessage('加载设置时出错: ' + error.message, 'warning');
+                console.error('加载设置出错:', error);
+                showFlashMessage('加载设置失败，请检查网络连接', 'danger');
             }
         }
     </script>
