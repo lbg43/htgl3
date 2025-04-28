@@ -108,6 +108,14 @@
             // 检查API状态
             checkApiStatus();
             
+            // 检查是否已经登录
+            const token = localStorage.getItem('token');
+            if (token) {
+                // 已经登录，直接跳转到仪表盘
+                window.location.href = 'dashboard.html';
+                return;
+            }
+            
             // 登录表单提交
             loginForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
@@ -133,7 +141,7 @@
                     if (data.success) {
                         // 登录成功，存储token并跳转
                         localStorage.setItem('token', data.token);
-                        localStorage.setItem('username', username);
+                        localStorage.setItem('username', data.username || username);
                         
                         showStatusMessage('登录成功，正在跳转...', 'success');
                         
@@ -143,7 +151,7 @@
                         }, 1000);
                     } else {
                         // 登录失败
-                        showStatusMessage('登录失败：' + data.message, 'danger');
+                        showStatusMessage(data.message || '登录失败：用户名或密码错误', 'danger');
                         resetLoginButton();
                     }
                 } catch (error) {
@@ -189,13 +197,26 @@
                 try {
                     const response = await fetch(`${API_BASE_URL}/api/status`, {
                         method: 'GET',
-                        cache: 'no-cache'
+                        cache: 'no-cache',
+                        timeout: 3000 // 设置3秒超时
                     });
                     
                     if (response.ok) {
-                        console.log('API可用');
-                        // API可用，隐藏离线模式选项
-                        offlineMode.style.display = 'none';
+                        const data = await response.json();
+                        console.log('API可用', data);
+                        
+                        if (data && data.status === 'online') {
+                            // API可用，隐藏离线模式选项
+                            offlineMode.style.display = 'none';
+                            // 显示API版本信息
+                            if (data.version) {
+                                console.log(`系统版本: ${data.version}`);
+                            }
+                        } else {
+                            // API返回异常数据
+                            console.warn('API状态异常:', data);
+                            offlineMode.style.display = 'block';
+                        }
                     } else {
                         // API返回错误，显示离线模式选项
                         console.log('API返回错误');
