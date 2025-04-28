@@ -490,10 +490,6 @@
                                         <label for="admin-username" class="form-label">管理员用户名</label>
                                         <input type="text" class="form-control" id="admin-username" value="admin">
                                     </div>
-                                    <div class="mb-3">
-                                        <label for="admin-password" class="form-label">管理员密码</label>
-                                        <input type="password" class="form-control" id="admin-password">
-                                    </div>
                                     <div class="d-grid">
                                         <button type="button" class="btn btn-primary" onclick="saveBasicSettings()">保存</button>
                                     </div>
@@ -531,7 +527,7 @@
                     <div class="row mt-4">
                         <div class="col-md-6">
                             <div class="table-container">
-                                <h5 class="mb-3">修改密码</h5>
+                                <h5 class="mb-3"><i class="fas fa-key"></i> 修改密码</h5>
                                 <form id="change-password-form">
                                     <div class="mb-3">
                                         <label for="current-password" class="form-label">当前密码</label>
@@ -1453,7 +1449,6 @@
         async function saveBasicSettings() {
             try {
                 const adminUsername = getSafeElement('admin-username');
-                const adminPassword = getSafeElement('admin-password');
                 
                 if (!adminUsername) {
                     showFlashMessage('未找到管理员用户名输入框', 'danger');
@@ -1461,7 +1456,6 @@
                 }
                 
                 const username = adminUsername.value.trim();
-                const password = adminPassword ? adminPassword.value.trim() : '';
                 
                 if (!username) {
                     showFlashMessage('请输入管理员用户名', 'danger');
@@ -1471,8 +1465,7 @@
                 const response = await fetchAPI('/api/settings/basic', {
                     method: 'POST',
                     body: JSON.stringify({
-                        username: username,
-                        password: password || undefined // 只有在填写了密码时才发送
+                        username: username
                     })
                 });
                 
@@ -1480,9 +1473,6 @@
                     showFlashMessage(`保存设置失败: ${response ? response.message : '网络错误'}`, 'danger');
                     return;
                 }
-                
-                // 清空密码字段
-                if (adminPassword) adminPassword.value = '';
                 
                 showFlashMessage('基本设置已保存', 'success');
             } catch (error) {
