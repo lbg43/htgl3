@@ -1182,6 +1182,62 @@
             }
         }
         
+        // 向用户发送消息API
+        async function sendMessageAPI(userId, message) {
+            try {
+                // 显示发送中状态
+                const sendButton = document.querySelector('#send-message-form button[type="submit"]');
+                if (sendButton) {
+                    sendButton.disabled = true;
+                    sendButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 发送中...';
+                }
+                
+                const response = await fetchAPI('/api/send_message', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        user_id: userId,
+                        message: message
+                    })
+                });
+                
+                // 恢复按钮状态
+                if (sendButton) {
+                    sendButton.disabled = false;
+                    sendButton.innerHTML = '<i class="fas fa-paper-plane"></i> 发送';
+                }
+                
+                if (!response) {
+                    showFlashMessage('服务器连接失败，无法发送消息', 'danger');
+                    return false;
+                }
+                
+                if (response.success) {
+                    showFlashMessage(
+                        response.telegram_delivered 
+                            ? '消息已成功发送' 
+                            : '消息已保存，但未能通过Telegram发送',
+                        response.telegram_delivered ? 'success' : 'warning'
+                    );
+                    return true;
+                } else {
+                    showFlashMessage(`发送失败: ${response.message || '未知错误'}`, 'danger');
+                    return false;
+                }
+            } catch (error) {
+                console.error('发送消息时出错:', error);
+                showFlashMessage('发送消息时出错: ' + error.message, 'danger');
+                
+                // 恢复按钮状态
+                const sendButton = document.querySelector('#send-message-form button[type="submit"]');
+                if (sendButton) {
+                    sendButton.disabled = false;
+                    sendButton.innerHTML = '<i class="fas fa-paper-plane"></i> 发送';
+                }
+                
+                return false;
+            }
+        }
+        
         // 根据消息类型返回图标
         function messageTypeIcon(type) {
             switch(type) {
