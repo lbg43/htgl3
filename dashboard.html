@@ -398,30 +398,6 @@
                                         <td>20</td>
                                         <td><a href="#" onclick="showUserDetail('56789012')" class="btn btn-sm btn-primary">查看</a></td>
                                     </tr>
-                                    <tr>
-                                        <td>67890123</td>
-                                        <td>@user6</td>
-                                        <td>孙八</td>
-                                        <td>2023-11-03 22:15</td>
-                                        <td>3</td>
-                                        <td><a href="#" onclick="showUserDetail('67890123')" class="btn btn-sm btn-primary">查看</a></td>
-                                    </tr>
-                                    <tr>
-                                        <td>78901234</td>
-                                        <td>@user7</td>
-                                        <td>周九</td>
-                                        <td>2023-11-03 16:08</td>
-                                        <td>7</td>
-                                        <td><a href="#" onclick="showUserDetail('78901234')" class="btn btn-sm btn-primary">查看</a></td>
-                                    </tr>
-                                    <tr>
-                                        <td>89012345</td>
-                                        <td>@user8</td>
-                                        <td>吴十</td>
-                                        <td>2023-11-03 12:45</td>
-                                        <td>9</td>
-                                        <td><a href="#" onclick="showUserDetail('89012345')" class="btn btn-sm btn-primary">查看</a></td>
-                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -440,6 +416,99 @@
                                 </li>
                             </ul>
                         </nav>
+                    </div>
+                </div>
+                
+                <!-- 用户详情内容 -->
+                <div id="user-detail-content" class="page-content" style="display: none;">
+                    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                        <div>
+                            <h1 class="h2"><i class="fas fa-user"></i> 用户详情</h1>
+                            <div class="text-muted">用户ID: <span id="user-detail-id">12345678</span></div>
+                        </div>
+                        <div class="btn-toolbar mb-2 mb-md-0">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="switchPage('users')">
+                                <i class="fas fa-arrow-left"></i> 返回用户列表
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">用户资料</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="text-center mb-3">
+                                        <i class="fas fa-user-circle fa-6x text-primary"></i>
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>用户ID:</strong> <span id="detail-user-id">12345678</span>
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>用户名:</strong> <span id="detail-username">@user1</span>
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>姓名:</strong> <span id="detail-name">张三</span>
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>加入时间:</strong> <span id="detail-join-date">2023-11-05 10:23</span>
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>消息数:</strong> <span id="detail-message-count">15</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">发送消息</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form id="send-message-form">
+                                        <div class="mb-3">
+                                            <textarea class="form-control" id="message" rows="3" placeholder="输入要发送的消息..."></textarea>
+                                        </div>
+                                        <div class="text-end">
+                                            <button type="button" class="btn btn-primary" onclick="sendMessage()">
+                                                <i class="fas fa-paper-plane"></i> 发送
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                            
+                            <div class="card mt-3">
+                                <div class="card-header">
+                                    <h5 class="mb-0">消息历史</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="chat-container">
+                                        <div class="message-box user-message">
+                                            <div class="d-flex justify-content-between">
+                                                <strong><i class="fas fa-user"></i> @user1</strong>
+                                                <span class="text-muted">2023-11-05 10:23</span>
+                                            </div>
+                                            <div class="mt-2">
+                                                请问你们的产品支持哪些语言？
+                                            </div>
+                                        </div>
+                                        <div class="message-box admin-message">
+                                            <div class="d-flex justify-content-between">
+                                                <strong><i class="fas fa-user-shield"></i> 管理员</strong>
+                                                <span class="text-muted">2023-11-05 10:25</span>
+                                            </div>
+                                            <div class="mt-2">
+                                                您好，我们的产品目前支持中文、英文、日文和韩文四种语言。
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -491,12 +560,6 @@
                                         </tbody>
                                     </table>
                                 </div>
-                                <div class="mt-3 text-center">
-                                    <div class="chart-placeholder bg-light p-5">
-                                        <i class="fas fa-chart-pie fa-3x text-primary mb-3"></i>
-                                        <p>消息类型分布饼图</p>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                         
@@ -534,12 +597,6 @@
                                             </tr>
                                         </tbody>
                                     </table>
-                                </div>
-                                <div class="mt-3 text-center">
-                                    <div class="chart-placeholder bg-light p-5">
-                                        <i class="fas fa-chart-line fa-3x text-success mb-3"></i>
-                                        <p>每日消息趋势图</p>
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -662,117 +719,6 @@
                         </div>
                     </div>
                 </div>
-                
-                <!-- 用户详情内容 -->
-                <div id="user-detail-content" class="page-content" style="display: none;">
-                    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                        <div>
-                            <h1 class="h2"><i class="fas fa-user"></i> 用户详情</h1>
-                            <div class="text-muted">用户ID: <span id="user-detail-id">-</span></div>
-                        </div>
-                        <div class="btn-toolbar mb-2 mb-md-0">
-                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="switchPage('users')">
-                                <i class="fas fa-arrow-left"></i> 返回用户列表
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="row mb-4">
-                        <div class="col-md-4">
-                            <div class="card">
-                                <div class="card-header">
-                                    <h5 class="mb-0">用户资料</h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="text-center mb-3">
-                                        <i class="fas fa-user-circle fa-6x text-primary"></i>
-                                    </div>
-                                    <div class="mb-2">
-                                        <strong>用户ID:</strong> <span id="detail-user-id">12345678</span>
-                                    </div>
-                                    <div class="mb-2">
-                                        <strong>用户名:</strong> <span id="detail-username">@user1</span>
-                                    </div>
-                                    <div class="mb-2">
-                                        <strong>姓名:</strong> <span id="detail-name">张三</span>
-                                    </div>
-                                    <div class="mb-2">
-                                        <strong>加入时间:</strong> <span id="detail-join-date">2023-11-05 10:23</span>
-                                    </div>
-                                    <div class="mb-2">
-                                        <strong>消息数:</strong> <span id="detail-message-count">15</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-8">
-                            <div class="card">
-                                <div class="card-header d-flex justify-content-between align-items-center">
-                                    <h5 class="mb-0">发送消息</h5>
-                                </div>
-                                <div class="card-body">
-                                    <form id="send-message-form">
-                                        <div class="mb-3">
-                                            <textarea class="form-control" id="message" rows="3" placeholder="输入要发送的消息..."></textarea>
-                                        </div>
-                                        <div class="text-end">
-                                            <button type="button" class="btn btn-primary" onclick="sendMessage()">
-                                                <i class="fas fa-paper-plane"></i> 发送
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                            
-                            <div class="card mt-3">
-                                <div class="card-header">
-                                    <h5 class="mb-0">消息历史</h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="chat-container">
-                                        <div class="message-box user-message">
-                                            <div class="d-flex justify-content-between">
-                                                <strong><i class="fas fa-user"></i> @user1</strong>
-                                                <span class="text-muted">2023-11-05 10:23</span>
-                                            </div>
-                                            <div class="mt-2">
-                                                请问你们的产品支持哪些语言？
-                                            </div>
-                                        </div>
-                                        <div class="message-box admin-message">
-                                            <div class="d-flex justify-content-between">
-                                                <strong><i class="fas fa-user-shield"></i> 管理员</strong>
-                                                <span class="text-muted">2023-11-05 10:25</span>
-                                            </div>
-                                            <div class="mt-2">
-                                                您好，我们的产品目前支持中文、英文、日文和韩文四种语言。
-                                            </div>
-                                        </div>
-                                        <div class="message-box user-message">
-                                            <div class="d-flex justify-content-between">
-                                                <strong><i class="fas fa-user"></i> @user1</strong>
-                                                <span class="text-muted">2023-11-05 10:30</span>
-                                            </div>
-                                            <div class="mt-2">
-                                                谢谢，我还想了解一下价格方面的信息。
-                                            </div>
-                                        </div>
-                                        <div class="message-box admin-message">
-                                            <div class="d-flex justify-content-between">
-                                                <strong><i class="fas fa-user-shield"></i> 管理员</strong>
-                                                <span class="text-muted">2023-11-05 10:32</span>
-                                            </div>
-                                            <div class="mt-2">
-                                                我们有不同的套餐可供选择，基础版每月98元，标准版每月198元，专业版每月298元。每个套餐包含的功能不同，您可以访问我们的官网查看详细的套餐对比。
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </main>
         </div>
     </div>
@@ -780,330 +726,104 @@
     <!-- Bootstrap JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // API地址 - 替换为您的后端API地址
-        const API_BASE_URL = 'https://您的后端API地址';
-        
-        // 检查登录状态
-        function checkAuth() {
+        // 登录状态检查
+        document.addEventListener('DOMContentLoaded', function() {
             const token = localStorage.getItem('auth_token');
             if (!token) {
                 // 未登录，重定向到登录页
                 window.location.href = 'index.html';
-                return false;
             }
-            return true;
-        }
-        
-        // API请求函数
-        async function fetchAPI(endpoint, options = {}) {
-            if (!checkAuth()) return null;
             
-            const token = localStorage.getItem('auth_token');
-            const defaultOptions = {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                credentials: 'include'
-            };
-            
-            const fetchOptions = {...defaultOptions, ...options};
-            
-            try {
-                const response = await fetch(`${API_BASE_URL}${endpoint}`, fetchOptions);
-                
-                // 如果返回401，说明token无效或过期
-                if (response.status === 401) {
-                    localStorage.removeItem('auth_token');
-                    window.location.href = 'index.html';
-                    return null;
-                }
-                
-                return await response.json();
-            } catch (error) {
-                console.error('API请求错误:', error);
-                showFlashMessage('请求失败，请检查网络连接', 'danger');
-                return null;
+            // 显示登录用户名（如果有）
+            const username = localStorage.getItem('username');
+            if (username) {
+                const loginInfo = document.createElement('div');
+                loginInfo.className = 'navbar-text text-white px-3';
+                loginInfo.innerHTML = `<i class="fas fa-user"></i> ${username}`;
+                document.querySelector('.navbar-nav').prepend(loginInfo);
             }
-        }
-        
-        // 发送消息API
-        async function sendMessageAPI(userId, message) {
-            return await fetchAPI('/api/send_message', {
-                method: 'POST',
-                body: JSON.stringify({
-                    user_id: userId,
-                    message: message
-                })
+            
+            // 绑定登出按钮
+            document.querySelector('.navbar-nav .nav-link').addEventListener('click', function(e) {
+                e.preventDefault();
+                logout();
             });
-        }
+            
+            // 默认加载仪表盘
+            switchPage('dashboard');
+        });
         
-        // 加载仪表盘数据
-        async function loadDashboardData() {
-            const data = await fetchAPI('/api/dashboard');
-            if (!data) return;
-            
-            // 更新统计数据
-            document.querySelector('.card.bg-primary h3').textContent = data.total_users || 0;
-            document.querySelector('.card.bg-success h3').textContent = data.total_messages || 0;
-            document.querySelector('.card.bg-warning h3').textContent = data.today_users || 0;
-            document.querySelector('.card.bg-info h3').textContent = data.response_rate || '0%';
-            
-            // 清空并加载最近用户
-            const recentUsersTable = document.querySelector('#dashboard-content .table-responsive:first-of-type tbody');
-            recentUsersTable.innerHTML = '';
-            
-            if (data.recent_users && data.recent_users.length > 0) {
-                data.recent_users.forEach(user => {
-                    recentUsersTable.innerHTML += `
-                        <tr>
-                            <td>${user.user_id}</td>
-                            <td>${user.username || '无用户名'}</td>
-                            <td>${user.join_date}</td>
-                            <td><a href="#" onclick="showUserDetail('${user.user_id}')" class="btn btn-sm btn-primary">查看</a></td>
-                        </tr>
-                    `;
-                });
-            }
-            
-            // 清空并加载最近消息
-            const recentMessagesContainer = document.querySelector('#dashboard-content .col-md-6:nth-of-type(2) .table-container');
-            recentMessagesContainer.innerHTML = '<h5 class="mb-3"><i class="fas fa-envelope-open-text"></i> 最近消息</h5>';
-            
-            if (data.recent_messages && data.recent_messages.length > 0) {
-                data.recent_messages.forEach(msg => {
-                    const messageClass = msg.is_from_admin ? 'admin-message' : 'user-message';
-                    const sender = msg.is_from_admin ? '管理员' : `${msg.username || '用户'}`;
-                    const icon = msg.is_from_admin ? 'fas fa-user-shield' : 'fas fa-user';
-                    
-                    recentMessagesContainer.innerHTML += `
-                        <div class="message-box ${messageClass}">
-                            <div class="d-flex justify-content-between">
-                                <strong><i class="${icon}"></i> ${sender}</strong>
-                                <span class="text-muted">${msg.timestamp}</span>
-                            </div>
-                            <div class="mt-2">
-                                ${msg.content}
-                            </div>
-                        </div>
-                    `;
-                });
-            } else {
-                recentMessagesContainer.innerHTML += '<div class="alert alert-info">暂无最近消息</div>';
-            }
-        }
-        
-        // 发送消息
-        async function sendMessage() {
-            const messageForm = document.querySelector('#send-message-form');
-            const userId = messageForm.getAttribute('data-user-id');
-            const messageText = document.getElementById('message').value;
-            
-            if (!messageText.trim()) {
-                showFlashMessage('消息内容不能为空', 'warning');
-                return;
-            }
-            
-            // 发送消息到API
-            const response = await sendMessageAPI(userId, messageText);
-            
-            if (response && response.success) {
-                showFlashMessage('消息发送成功', 'success');
-                
-                // 添加到消息历史
-                const chatContainer = document.querySelector('#user-detail-content .chat-container');
-                const now = new Date();
-                const timeString = now.toLocaleString('zh-CN');
-                
-                const adminMessage = document.createElement('div');
-                adminMessage.className = 'message-box admin-message';
-                adminMessage.innerHTML = `
-                    <div class="d-flex justify-content-between">
-                        <strong><i class="fas fa-user-shield"></i> 管理员</strong>
-                        <span class="text-muted">${timeString}</span>
-                    </div>
-                    <div class="mt-2">
-                        ${messageText}
-                    </div>
-                `;
-                
-                chatContainer.appendChild(adminMessage);
-                chatContainer.scrollTop = chatContainer.scrollHeight;
-                document.getElementById('message').value = '';
-                
-                // 刷新用户详情数据
-                setTimeout(() => loadUserDetail(userId), 1000);
-            } else {
-                showFlashMessage(response?.message || '消息发送失败', 'danger');
-            }
-        }
-        
-        // 加载用户列表数据
-        async function loadUsersList(page = 1, search = '') {
-            const data = await fetchAPI(`/api/users?page=${page}&search=${encodeURIComponent(search)}`);
-            if (!data) return;
-            
-            // 清空并加载用户表格
-            const usersTable = document.querySelector('#users-content .table-responsive tbody');
-            usersTable.innerHTML = '';
-            
-            if (data.users && data.users.length > 0) {
-                data.users.forEach(user => {
-                    usersTable.innerHTML += `
-                        <tr>
-                            <td>${user.user_id}</td>
-                            <td>${user.username || '无用户名'}</td>
-                            <td>${user.first_name} ${user.last_name || ''}</td>
-                            <td>${user.join_date}</td>
-                            <td>${user.message_count || 0}</td>
-                            <td><a href="#" onclick="showUserDetail('${user.user_id}')" class="btn btn-sm btn-primary">查看</a></td>
-                        </tr>
-                    `;
-                });
-            }
-            
-            // 更新分页
-            const pagination = document.querySelector('#users-content .pagination');
-            pagination.innerHTML = '';
-            
-            // 上一页按钮
-            pagination.innerHTML += `
-                <li class="page-item ${page <= 1 ? 'disabled' : ''}">
-                    <a class="page-link" href="#" ${page > 1 ? `onclick="loadUsersList(${page-1}, '${search}')"` : ''} tabindex="-1" aria-disabled="${page <= 1}">上一页</a>
-                </li>
-            `;
-            
-            // 页码按钮
-            for (let i = 1; i <= data.total_pages; i++) {
-                pagination.innerHTML += `
-                    <li class="page-item ${i === page ? 'active' : ''}">
-                        <a class="page-link" href="#" onclick="loadUsersList(${i}, '${search}')">${i}</a>
-                    </li>
-                `;
-            }
-            
-            // 下一页按钮
-            pagination.innerHTML += `
-                <li class="page-item ${page >= data.total_pages ? 'disabled' : ''}">
-                    <a class="page-link" href="#" ${page < data.total_pages ? `onclick="loadUsersList(${page+1}, '${search}')"` : ''}>下一页</a>
-                </li>
-            `;
-        }
-        
-        // 加载统计数据
-        async function loadStatistics() {
-            const data = await fetchAPI('/api/statistics');
-            if (!data) return;
-            
-            // 更新消息类型统计
-            const messageTypesTable = document.querySelector('#statistics-content .table:nth-of-type(1) tbody');
-            messageTypesTable.innerHTML = '';
-            
-            if (data.message_types && data.message_types.length > 0) {
-                data.message_types.forEach(type => {
-                    messageTypesTable.innerHTML += `
-                        <tr>
-                            <td>${type.message_type}</td>
-                            <td>${type.count}</td>
-                            <td>${type.percentage}%</td>
-                        </tr>
-                    `;
-                });
-            }
-            
-            // 更新每日消息统计
-            const dailyMessagesTable = document.querySelector('#statistics-content .table:nth-of-type(2) tbody');
-            dailyMessagesTable.innerHTML = '';
-            
-            if (data.daily_messages && data.daily_messages.length > 0) {
-                data.daily_messages.forEach(day => {
-                    dailyMessagesTable.innerHTML += `
-                        <tr>
-                            <td>${day.date}</td>
-                            <td>${day.count}</td>
-                        </tr>
-                    `;
-                });
-            }
-            
-            // 更新活跃用户排名
-            const activeUsersTable = document.querySelector('#statistics-content .table:nth-of-type(3) tbody');
-            activeUsersTable.innerHTML = '';
-            
-            if (data.active_users && data.active_users.length > 0) {
-                data.active_users.forEach((user, index) => {
-                    activeUsersTable.innerHTML += `
-                        <tr>
-                            <td>${index + 1}</td>
-                            <td>${user.user_id}</td>
-                            <td>${user.username || '无用户名'}</td>
-                            <td>${user.first_name} ${user.last_name || ''}</td>
-                            <td>${user.message_count}</td>
-                            <td><a href="#" onclick="showUserDetail('${user.user_id}')" class="btn btn-sm btn-primary">查看</a></td>
-                        </tr>
-                    `;
-                });
-            }
-        }
-        
-        // 加载用户详情数据
-        async function loadUserDetail(userId) {
-            const data = await fetchAPI(`/api/user/${userId}`);
-            if (!data || data.error) {
-                showFlashMessage('无法加载用户详情', 'danger');
-                return;
-            }
-            
-            // 更新用户信息
-            document.getElementById('user-detail-id').textContent = data.user.user_id;
-            document.getElementById('detail-user-id').textContent = data.user.user_id;
-            document.getElementById('detail-username').textContent = data.user.username || '无用户名';
-            document.getElementById('detail-name').textContent = `${data.user.first_name} ${data.user.last_name || ''}`;
-            document.getElementById('detail-join-date').textContent = data.user.join_date;
-            document.getElementById('detail-message-count').textContent = data.user.message_count || 0;
-            
-            // 清空并加载消息历史
-            const chatContainer = document.querySelector('#user-detail-content .chat-container');
-            chatContainer.innerHTML = '';
-            
-            if (data.messages && data.messages.length > 0) {
-                data.messages.forEach(msg => {
-                    const messageClass = msg.is_from_admin ? 'admin-message' : 'user-message';
-                    const sender = msg.is_from_admin ? '管理员' : `@${data.user.username || '用户'}`;
-                    const icon = msg.is_from_admin ? 'fas fa-user-shield' : 'fas fa-user';
-                    
-                    chatContainer.innerHTML += `
-                        <div class="message-box ${messageClass}">
-                            <div class="d-flex justify-content-between">
-                                <strong><i class="${icon}"></i> ${sender}</strong>
-                                <span class="text-muted">${msg.timestamp}</span>
-                            </div>
-                            <div class="mt-2">
-                                ${msg.content}
-                            </div>
-                        </div>
-                    `;
-                });
-            } else {
-                chatContainer.innerHTML = '<div class="alert alert-info">暂无消息记录</div>';
-            }
-            
-            // 更新发送消息表单的用户ID
-            document.querySelector('#send-message-form').setAttribute('data-user-id', userId);
-        }
-        
-        // 搜索用户
-        function searchUsers() {
-            const searchText = document.querySelector('#users-content input[type="search"]').value;
-            loadUsersList(1, searchText);
-            showFlashMessage(`正在搜索: ${searchText}`, 'info');
-        }
-        
-        // 登出
+        // 登出函数
         function logout() {
             localStorage.removeItem('auth_token');
             localStorage.removeItem('username');
             window.location.href = 'index.html';
+        }
+        
+        // 搜索用户
+        function searchUsers() {
+            // 在实际应用中会发送API请求搜索用户
+            const searchText = document.querySelector('#users-content input[type="search"]').value;
+            showFlashMessage(`正在搜索用户: ${searchText}`, 'info');
+        }
+        
+        // 显示用户详情
+        function showUserDetail(userId) {
+            // 隐藏所有内容
+            document.querySelectorAll('.page-content').forEach(content => {
+                content.style.display = 'none';
+            });
+            
+            // 显示用户详情
+            document.getElementById('user-detail-content').style.display = 'block';
+            
+            // 更新用户详情页的用户ID
+            document.getElementById('user-detail-id').textContent = userId;
+            document.getElementById('detail-user-id').textContent = userId;
+            
+            // 在实际应用中会发送API请求获取用户详情
+            showFlashMessage(`正在加载用户ID: ${userId} 的详情`, 'info');
+            
+            // 设置发送消息表单的用户ID
+            document.getElementById('send-message-form').setAttribute('data-user-id', userId);
+        }
+        
+        // 发送消息
+        function sendMessage() {
+            const messageForm = document.getElementById('send-message-form');
+            const userId = messageForm.getAttribute('data-user-id');
+            const messageText = document.getElementById('message').value.trim();
+            
+            if (!messageText) {
+                showFlashMessage('消息内容不能为空', 'warning');
+                return;
+            }
+            
+            // 在实际应用中会发送API请求发送消息
+            showFlashMessage('消息发送成功', 'success');
+            
+            // 清空消息输入框
+            document.getElementById('message').value = '';
+            
+            // 将发送的消息添加到消息历史中
+            const chatContainer = document.querySelector('.chat-container');
+            const now = new Date();
+            const timeString = now.toLocaleString('zh-CN');
+            
+            const newMessage = document.createElement('div');
+            newMessage.className = 'message-box admin-message';
+            newMessage.innerHTML = `
+                <div class="d-flex justify-content-between">
+                    <strong><i class="fas fa-user-shield"></i> 管理员</strong>
+                    <span class="text-muted">${timeString}</span>
+                </div>
+                <div class="mt-2">
+                    ${messageText}
+                </div>
+            `;
+            
+            chatContainer.appendChild(newMessage);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
         }
         
         // 显示不同页面内容的函数
@@ -1119,39 +839,8 @@
             });
             
             // 显示选定的内容
-            if (pageName === 'dashboard') {
-                document.getElementById('dashboard-content').style.display = 'block';
-                document.getElementById('nav-dashboard').classList.add('active');
-                loadDashboardData(); // 加载仪表盘数据
-            } else if (pageName === 'users') {
-                document.getElementById('users-content').style.display = 'block';
-                document.getElementById('nav-users').classList.add('active');
-                loadUsersList(); // 加载用户列表
-            } else if (pageName === 'statistics') {
-                document.getElementById('statistics-content').style.display = 'block';
-                document.getElementById('nav-statistics').classList.add('active');
-                loadStatistics(); // 加载统计数据
-            } else if (pageName === 'settings') {
-                document.getElementById('settings-content').style.display = 'block';
-                document.getElementById('nav-settings').classList.add('active');
-            }
-        }
-        
-        // 显示用户详情
-        function showUserDetail(userId) {
-            // 检查认证
-            if (!checkAuth()) return;
-            
-            // 隐藏所有内容
-            document.querySelectorAll('.page-content').forEach(content => {
-                content.style.display = 'none';
-            });
-            
-            // 显示用户详情内容
-            document.getElementById('user-detail-content').style.display = 'block';
-            
-            // 加载用户详情数据
-            loadUserDetail(userId);
+            document.getElementById(`${pageName}-content`).style.display = 'block';
+            document.getElementById(`nav-${pageName}`).classList.add('active');
         }
         
         // 显示Flash消息
@@ -1171,42 +860,6 @@
                 alert.close();
             }, 3000);
         }
-        
-        // 页面加载时检查认证并加载仪表盘
-        document.addEventListener('DOMContentLoaded', function() {
-            // 检查认证
-            if (!checkAuth()) return;
-            
-            // 显示登录用户名（如果有）
-            const username = localStorage.getItem('username');
-            if (username) {
-                const loginInfo = document.createElement('div');
-                loginInfo.className = 'navbar-text text-white px-3';
-                loginInfo.innerHTML = `<i class="fas fa-user"></i> ${username}`;
-                document.querySelector('.navbar-nav').prepend(loginInfo);
-            }
-            
-            // 绑定登出按钮
-            document.querySelector('.navbar-nav .nav-link').addEventListener('click', function(e) {
-                e.preventDefault();
-                logout();
-            });
-            
-            // 绑定发送消息表单
-            document.querySelector('#send-message-form button').addEventListener('click', function(e) {
-                e.preventDefault();
-                sendMessage();
-            });
-            
-            // 绑定用户搜索
-            document.querySelector('#users-content button').addEventListener('click', function(e) {
-                e.preventDefault();
-                searchUsers();
-            });
-            
-            // 默认显示仪表盘
-            switchPage('dashboard');
-        });
     </script>
 </body>
-</html> 
+</html>
