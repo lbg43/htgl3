@@ -1443,6 +1443,13 @@
                 return;
             }
             
+            // 禁用提交按钮，防止重复提交
+            const submitButton = document.querySelector('#change-password-form button[type="button"]');
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 处理中...';
+            }
+            
             try {
                 // 调用API修改密码
                 const response = await fetchAPI('/api/change_password', {
@@ -1452,6 +1459,12 @@
                         new_password: newPwd
                     })
                 });
+                
+                // 重新启用按钮
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = '修改密码';
+                }
                 
                 if (!response || !response.success) {
                     showFlashMessage(`密码修改失败: ${response ? response.message : '网络错误'}`, 'danger');
@@ -1463,8 +1476,33 @@
                 newPassword.value = '';
                 confirmPassword.value = '';
                 
-                showFlashMessage('密码修改成功！', 'success');
+                // 显示成功消息，并设置倒计时
+                let countdown = 3;
+                showFlashMessage(`密码修改成功！${countdown}秒后将跳转到登录页面...`, 'success');
+                
+                // 创建倒计时定时器
+                const countdownInterval = setInterval(() => {
+                    countdown--;
+                    showFlashMessage(`密码修改成功！${countdown}秒后将跳转到登录页面...`, 'success');
+                    
+                    if (countdown <= 0) {
+                        clearInterval(countdownInterval);
+                        // 清除登录信息
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('username');
+                        localStorage.removeItem('offlineMode');
+                        
+                        // 跳转到登录页面
+                        window.location.href = 'index.html';
+                    }
+                }, 1000);
             } catch (error) {
+                // 重新启用按钮
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = '修改密码';
+                }
+                
                 console.error('修改密码时出错:', error);
                 showFlashMessage('修改密码时出错: ' + error.message, 'danger');
             }
