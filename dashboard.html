@@ -1305,7 +1305,8 @@
                     },
                     'settings': {
                         contentId: 'settings-content',
-                        navId: 'nav-settings'
+                        navId: 'nav-settings',
+                        loadFunc: loadSettings
                     },
                     'change-password': {
                         contentId: 'change-password-content',
@@ -1580,6 +1581,13 @@
                     showFlashMessage('请输入管理员用户名', 'danger');
                     return;
                 }
+
+                // 显示保存中状态
+                const saveButton = document.querySelector('#basic-settings-form button');
+                if (saveButton) {
+                    saveButton.disabled = true;
+                    saveButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 保存中...';
+                }
                 
                 const response = await fetchAPI('/api/settings/basic', {
                     method: 'POST',
@@ -1588,13 +1596,30 @@
                     })
                 });
                 
+                // 恢复按钮状态
+                if (saveButton) {
+                    saveButton.disabled = false;
+                    saveButton.innerHTML = '保存';
+                }
+                
                 if (!response || !response.success) {
                     showFlashMessage(`保存设置失败: ${response ? response.message : '网络错误'}`, 'danger');
                     return;
                 }
                 
                 showFlashMessage('基本设置已保存', 'success');
+                
+                // 更新本地存储的用户名
+                localStorage.setItem('username', username);
+                document.getElementById('current-username').textContent = username;
             } catch (error) {
+                // 恢复按钮状态
+                const saveButton = document.querySelector('#basic-settings-form button');
+                if (saveButton) {
+                    saveButton.disabled = false;
+                    saveButton.innerHTML = '保存';
+                }
+                
                 console.error('保存基本设置时出错:', error);
                 showFlashMessage('保存设置时出错: ' + error.message, 'danger');
             }
@@ -1616,6 +1641,13 @@
                 const enableAutoReply = autoReply.checked;
                 const welcomeMsg = welcomeMessage.value.trim();
                 
+                // 显示保存中状态
+                const saveButton = document.querySelector('#bot-settings-form button');
+                if (saveButton) {
+                    saveButton.disabled = true;
+                    saveButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 保存中...';
+                }
+                
                 const response = await fetchAPI('/api/settings/bot', {
                     method: 'POST',
                     body: JSON.stringify({
@@ -1625,15 +1657,78 @@
                     })
                 });
                 
+                // 恢复按钮状态
+                if (saveButton) {
+                    saveButton.disabled = false;
+                    saveButton.innerHTML = '保存';
+                }
+                
                 if (!response || !response.success) {
                     showFlashMessage(`保存机器人设置失败: ${response ? response.message : '网络错误'}`, 'danger');
                     return;
                 }
                 
-                showFlashMessage('机器人设置已保存', 'success');
+                showFlashMessage(response.message || '机器人设置已保存', 'success');
             } catch (error) {
+                // 恢复按钮状态
+                const saveButton = document.querySelector('#bot-settings-form button');
+                if (saveButton) {
+                    saveButton.disabled = false;
+                    saveButton.innerHTML = '保存';
+                }
+                
                 console.error('保存机器人设置时出错:', error);
                 showFlashMessage('保存设置时出错: ' + error.message, 'danger');
+            }
+        }
+
+        // 加载当前系统设置
+        async function loadSettings() {
+            try {
+                console.log("正在加载系统设置...");
+                const adminUsername = getSafeElement('admin-username');
+                const botToken = getSafeElement('bot-token');
+                const autoReply = getSafeElement('auto-reply');
+                const welcomeMessage = getSafeElement('welcome-message');
+                
+                if (!adminUsername || !autoReply || !welcomeMessage) {
+                    console.error('未找到设置表单元素');
+                    return;
+                }
+                
+                // 显示加载状态
+                showFlashMessage('正在加载设置...', 'info', 1000);
+                
+                const response = await fetchAPI('/api/settings');
+                
+                if (!response || !response.success) {
+                    console.error('获取设置失败:', response ? response.message : '网络错误');
+                    showFlashMessage('加载设置失败，将使用默认值', 'warning');
+                    return;
+                }
+                
+                const settings = response.settings;
+                
+                // 填充表单
+                if (settings.admin_username) {
+                    adminUsername.value = settings.admin_username;
+                }
+                
+                if (autoReply) {
+                    autoReply.checked = settings.auto_reply !== false;
+                }
+                
+                if (welcomeMessage && settings.welcome_message) {
+                    welcomeMessage.value = settings.welcome_message;
+                }
+                
+                // Bot Token不会从服务器返回（安全考虑），如果本地存储中有，可以使用
+                // 但一般不会显示现有token
+                
+                console.log("系统设置加载完成");
+            } catch (error) {
+                console.error('加载设置时出错:', error);
+                showFlashMessage('加载设置时出错: ' + error.message, 'warning');
             }
         }
     </script>
