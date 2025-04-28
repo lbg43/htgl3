@@ -174,9 +174,6 @@
                         <h1 class="h2"><i class="fas fa-tachometer-alt"></i> 仪表盘</h1>
                         <div class="btn-toolbar mb-2 mb-md-0">
                             <div class="btn-group me-2">
-                                <button type="button" class="btn btn-sm btn-outline-secondary">
-                                    <i class="fas fa-download"></i> 导出数据
-                                </button>
                                 <button type="button" class="btn btn-sm btn-outline-secondary" onclick="showFlashMessage('数据已刷新', 'info')">
                                     <i class="fas fa-sync"></i> 刷新
                                 </button>
@@ -299,6 +296,17 @@
                                     <!-- 这里将由JavaScript动态填充 -->
                                 </tbody>
                             </table>
+                        </div>
+                        <!-- 分页控件 -->
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div class="pagination-info">
+                                <span id="pagination-info">显示 0-0 条，共 0 条</span>
+                            </div>
+                            <nav aria-label="用户列表分页">
+                                <ul class="pagination" id="users-pagination">
+                                    <!-- 分页控件将由JavaScript动态填充 -->
+                                </ul>
+                            </nav>
                         </div>
                     </div>
                 </div>
@@ -487,7 +495,7 @@
                                         <input type="password" class="form-control" id="admin-password">
                                     </div>
                                     <div class="d-grid">
-                                        <button type="button" class="btn btn-primary">保存</button>
+                                        <button type="button" class="btn btn-primary" onclick="saveBasicSettings()">保存</button>
                                     </div>
                                 </form>
                             </div>
@@ -512,7 +520,33 @@
                                         <textarea class="form-control" id="welcome-message" rows="3">欢迎使用我们的客服机器人，请问有什么可以帮助您的？</textarea>
                                     </div>
                                     <div class="d-grid">
-                                        <button type="button" class="btn btn-primary">保存</button>
+                                        <button type="button" class="btn btn-primary" onclick="saveBotSettings()">保存</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 修改密码部分 -->
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <div class="table-container">
+                                <h5 class="mb-3">修改密码</h5>
+                                <form id="change-password-form">
+                                    <div class="mb-3">
+                                        <label for="current-password" class="form-label">当前密码</label>
+                                        <input type="password" class="form-control" id="current-password" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="new-password" class="form-label">新密码</label>
+                                        <input type="password" class="form-control" id="new-password" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="confirm-password" class="form-label">确认新密码</label>
+                                        <input type="password" class="form-control" id="confirm-password" required>
+                                    </div>
+                                    <div class="d-grid">
+                                        <button type="button" class="btn btn-primary" onclick="changePassword()">修改密码</button>
                                     </div>
                                 </form>
                             </div>
@@ -772,7 +806,7 @@
         }
         
         // 加载用户列表
-        async function loadUsersList(searchTerm = '') {
+        async function loadUsersList(searchTerm = '', page = 1) {
             try {
                 console.log("开始加载用户列表");
                 showFlashMessage('正在加载用户列表...', 'info', 1000);
@@ -784,7 +818,12 @@
                     return;
                 }
                 
-                const endpoint = searchTerm ? `/api/users?search=${encodeURIComponent(searchTerm)}` : '/api/users';
+                // 构建API请求URL
+                let endpoint = `/api/users?page=${page}&limit=15`;
+                if (searchTerm) {
+                    endpoint += `&search=${encodeURIComponent(searchTerm)}`;
+                }
+                
                 const data = await fetchAPI(endpoint);
                 
                 if (!data || !data.success) {
@@ -799,6 +838,7 @@
                     return;
                 }
                 
+                // 显示用户数据
                 data.users.forEach(user => {
                     if (user) {
                         const row = document.createElement('tr');
@@ -818,11 +858,78 @@
                     }
                 });
                 
+                // 更新分页信息
+                updatePagination(data.pagination || {
+                    current_page: 1,
+                    total_pages: 1,
+                    total_items: data.users.length,
+                    items_per_page: 15
+                });
+                
                 console.log("用户列表加载完成");
             } catch (error) {
                 console.error('加载用户列表时出错:', error);
                 showFlashMessage('加载数据时出错: ' + error.message, 'danger');
             }
+        }
+        
+        // 更新分页控件
+        function updatePagination(pagination) {
+            const paginationInfo = getSafeElement('pagination-info');
+            const paginationEl = getSafeElement('users-pagination');
+            
+            if (!paginationInfo || !paginationEl) {
+                console.error('未找到分页元素');
+                return;
+            }
+            
+            const { current_page, total_pages, total_items, items_per_page } = pagination;
+            const start = (current_page - 1) * items_per_page + 1;
+            const end = Math.min(current_page * items_per_page, total_items);
+            
+            // 更新分页信息
+            paginationInfo.textContent = `显示 ${start}-${end} 条，共 ${total_items} 条`;
+            
+            // 构建分页控件
+            let paginationHTML = '';
+            
+            // 上一页按钮
+            paginationHTML += `
+                <li class="page-item ${current_page === 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="return loadUsersList('', ${current_page - 1});" aria-label="上一页">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+            `;
+            
+            // 页码按钮
+            const maxButtons = 5;
+            const halfMaxButtons = Math.floor(maxButtons / 2);
+            let startPage = Math.max(1, current_page - halfMaxButtons);
+            let endPage = Math.min(total_pages, startPage + maxButtons - 1);
+            
+            if (endPage - startPage + 1 < maxButtons) {
+                startPage = Math.max(1, endPage - maxButtons + 1);
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                paginationHTML += `
+                    <li class="page-item ${i === current_page ? 'active' : ''}">
+                        <a class="page-link" href="#" onclick="return loadUsersList('', ${i});">${i}</a>
+                    </li>
+                `;
+            }
+            
+            // 下一页按钮
+            paginationHTML += `
+                <li class="page-item ${current_page === total_pages ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="return loadUsersList('', ${current_page + 1});" aria-label="下一页">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            `;
+            
+            paginationEl.innerHTML = paginationHTML;
         }
         
         // 加载统计数据
@@ -1282,6 +1389,144 @@
             console.log("页面完全加载完成");
             // 可以在这里添加额外的初始化逻辑
         });
+
+        // 修改密码函数
+        async function changePassword() {
+            const currentPassword = getSafeElement('current-password');
+            const newPassword = getSafeElement('new-password');
+            const confirmPassword = getSafeElement('confirm-password');
+            
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                showFlashMessage('密码表单元素不完整，请刷新页面', 'danger');
+                return;
+            }
+            
+            // 获取密码值
+            const currentPwd = currentPassword.value.trim();
+            const newPwd = newPassword.value.trim();
+            const confirmPwd = confirmPassword.value.trim();
+            
+            // 验证输入
+            if (!currentPwd || !newPwd || !confirmPwd) {
+                showFlashMessage('请填写所有密码字段', 'danger');
+                return;
+            }
+            
+            if (newPwd !== confirmPwd) {
+                showFlashMessage('新密码与确认密码不匹配', 'danger');
+                return;
+            }
+            
+            if (newPwd.length < 6) {
+                showFlashMessage('新密码长度需至少6个字符', 'danger');
+                return;
+            }
+            
+            try {
+                // 调用API修改密码
+                const response = await fetchAPI('/api/change_password', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        current_password: currentPwd,
+                        new_password: newPwd
+                    })
+                });
+                
+                if (!response || !response.success) {
+                    showFlashMessage(`密码修改失败: ${response ? response.message : '网络错误'}`, 'danger');
+                    return;
+                }
+                
+                // 清空表单
+                currentPassword.value = '';
+                newPassword.value = '';
+                confirmPassword.value = '';
+                
+                showFlashMessage('密码修改成功！', 'success');
+            } catch (error) {
+                console.error('修改密码时出错:', error);
+                showFlashMessage('修改密码时出错: ' + error.message, 'danger');
+            }
+        }
+        
+        // 保存基本设置
+        async function saveBasicSettings() {
+            try {
+                const adminUsername = getSafeElement('admin-username');
+                const adminPassword = getSafeElement('admin-password');
+                
+                if (!adminUsername) {
+                    showFlashMessage('未找到管理员用户名输入框', 'danger');
+                    return;
+                }
+                
+                const username = adminUsername.value.trim();
+                const password = adminPassword ? adminPassword.value.trim() : '';
+                
+                if (!username) {
+                    showFlashMessage('请输入管理员用户名', 'danger');
+                    return;
+                }
+                
+                const response = await fetchAPI('/api/settings/basic', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        username: username,
+                        password: password || undefined // 只有在填写了密码时才发送
+                    })
+                });
+                
+                if (!response || !response.success) {
+                    showFlashMessage(`保存设置失败: ${response ? response.message : '网络错误'}`, 'danger');
+                    return;
+                }
+                
+                // 清空密码字段
+                if (adminPassword) adminPassword.value = '';
+                
+                showFlashMessage('基本设置已保存', 'success');
+            } catch (error) {
+                console.error('保存基本设置时出错:', error);
+                showFlashMessage('保存设置时出错: ' + error.message, 'danger');
+            }
+        }
+        
+        // 保存机器人设置
+        async function saveBotSettings() {
+            try {
+                const botToken = getSafeElement('bot-token');
+                const autoReply = getSafeElement('auto-reply');
+                const welcomeMessage = getSafeElement('welcome-message');
+                
+                if (!botToken || !autoReply || !welcomeMessage) {
+                    showFlashMessage('未找到机器人设置表单元素', 'danger');
+                    return;
+                }
+                
+                const token = botToken.value.trim();
+                const enableAutoReply = autoReply.checked;
+                const welcomeMsg = welcomeMessage.value.trim();
+                
+                const response = await fetchAPI('/api/settings/bot', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        bot_token: token || undefined,
+                        auto_reply: enableAutoReply,
+                        welcome_message: welcomeMsg
+                    })
+                });
+                
+                if (!response || !response.success) {
+                    showFlashMessage(`保存机器人设置失败: ${response ? response.message : '网络错误'}`, 'danger');
+                    return;
+                }
+                
+                showFlashMessage('机器人设置已保存', 'success');
+            } catch (error) {
+                console.error('保存机器人设置时出错:', error);
+                showFlashMessage('保存设置时出错: ' + error.message, 'danger');
+            }
+        }
     </script>
 </body>
 </html>
