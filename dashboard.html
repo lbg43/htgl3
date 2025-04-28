@@ -780,6 +780,332 @@
     <!-- Bootstrap JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // API地址 - 替换为您的后端API地址
+        const API_BASE_URL = 'https://您的后端API地址';
+        
+        // 检查登录状态
+        function checkAuth() {
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                // 未登录，重定向到登录页
+                window.location.href = 'index.html';
+                return false;
+            }
+            return true;
+        }
+        
+        // API请求函数
+        async function fetchAPI(endpoint, options = {}) {
+            if (!checkAuth()) return null;
+            
+            const token = localStorage.getItem('auth_token');
+            const defaultOptions = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                credentials: 'include'
+            };
+            
+            const fetchOptions = {...defaultOptions, ...options};
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, fetchOptions);
+                
+                // 如果返回401，说明token无效或过期
+                if (response.status === 401) {
+                    localStorage.removeItem('auth_token');
+                    window.location.href = 'index.html';
+                    return null;
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('API请求错误:', error);
+                showFlashMessage('请求失败，请检查网络连接', 'danger');
+                return null;
+            }
+        }
+        
+        // 发送消息API
+        async function sendMessageAPI(userId, message) {
+            return await fetchAPI('/api/send_message', {
+                method: 'POST',
+                body: JSON.stringify({
+                    user_id: userId,
+                    message: message
+                })
+            });
+        }
+        
+        // 加载仪表盘数据
+        async function loadDashboardData() {
+            const data = await fetchAPI('/api/dashboard');
+            if (!data) return;
+            
+            // 更新统计数据
+            document.querySelector('.card.bg-primary h3').textContent = data.total_users || 0;
+            document.querySelector('.card.bg-success h3').textContent = data.total_messages || 0;
+            document.querySelector('.card.bg-warning h3').textContent = data.today_users || 0;
+            document.querySelector('.card.bg-info h3').textContent = data.response_rate || '0%';
+            
+            // 清空并加载最近用户
+            const recentUsersTable = document.querySelector('#dashboard-content .table-responsive:first-of-type tbody');
+            recentUsersTable.innerHTML = '';
+            
+            if (data.recent_users && data.recent_users.length > 0) {
+                data.recent_users.forEach(user => {
+                    recentUsersTable.innerHTML += `
+                        <tr>
+                            <td>${user.user_id}</td>
+                            <td>${user.username || '无用户名'}</td>
+                            <td>${user.join_date}</td>
+                            <td><a href="#" onclick="showUserDetail('${user.user_id}')" class="btn btn-sm btn-primary">查看</a></td>
+                        </tr>
+                    `;
+                });
+            }
+            
+            // 清空并加载最近消息
+            const recentMessagesContainer = document.querySelector('#dashboard-content .col-md-6:nth-of-type(2) .table-container');
+            recentMessagesContainer.innerHTML = '<h5 class="mb-3"><i class="fas fa-envelope-open-text"></i> 最近消息</h5>';
+            
+            if (data.recent_messages && data.recent_messages.length > 0) {
+                data.recent_messages.forEach(msg => {
+                    const messageClass = msg.is_from_admin ? 'admin-message' : 'user-message';
+                    const sender = msg.is_from_admin ? '管理员' : `${msg.username || '用户'}`;
+                    const icon = msg.is_from_admin ? 'fas fa-user-shield' : 'fas fa-user';
+                    
+                    recentMessagesContainer.innerHTML += `
+                        <div class="message-box ${messageClass}">
+                            <div class="d-flex justify-content-between">
+                                <strong><i class="${icon}"></i> ${sender}</strong>
+                                <span class="text-muted">${msg.timestamp}</span>
+                            </div>
+                            <div class="mt-2">
+                                ${msg.content}
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                recentMessagesContainer.innerHTML += '<div class="alert alert-info">暂无最近消息</div>';
+            }
+        }
+        
+        // 发送消息
+        async function sendMessage() {
+            const messageForm = document.querySelector('#send-message-form');
+            const userId = messageForm.getAttribute('data-user-id');
+            const messageText = document.getElementById('message').value;
+            
+            if (!messageText.trim()) {
+                showFlashMessage('消息内容不能为空', 'warning');
+                return;
+            }
+            
+            // 发送消息到API
+            const response = await sendMessageAPI(userId, messageText);
+            
+            if (response && response.success) {
+                showFlashMessage('消息发送成功', 'success');
+                
+                // 添加到消息历史
+                const chatContainer = document.querySelector('#user-detail-content .chat-container');
+                const now = new Date();
+                const timeString = now.toLocaleString('zh-CN');
+                
+                const adminMessage = document.createElement('div');
+                adminMessage.className = 'message-box admin-message';
+                adminMessage.innerHTML = `
+                    <div class="d-flex justify-content-between">
+                        <strong><i class="fas fa-user-shield"></i> 管理员</strong>
+                        <span class="text-muted">${timeString}</span>
+                    </div>
+                    <div class="mt-2">
+                        ${messageText}
+                    </div>
+                `;
+                
+                chatContainer.appendChild(adminMessage);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+                document.getElementById('message').value = '';
+                
+                // 刷新用户详情数据
+                setTimeout(() => loadUserDetail(userId), 1000);
+            } else {
+                showFlashMessage(response?.message || '消息发送失败', 'danger');
+            }
+        }
+        
+        // 加载用户列表数据
+        async function loadUsersList(page = 1, search = '') {
+            const data = await fetchAPI(`/api/users?page=${page}&search=${encodeURIComponent(search)}`);
+            if (!data) return;
+            
+            // 清空并加载用户表格
+            const usersTable = document.querySelector('#users-content .table-responsive tbody');
+            usersTable.innerHTML = '';
+            
+            if (data.users && data.users.length > 0) {
+                data.users.forEach(user => {
+                    usersTable.innerHTML += `
+                        <tr>
+                            <td>${user.user_id}</td>
+                            <td>${user.username || '无用户名'}</td>
+                            <td>${user.first_name} ${user.last_name || ''}</td>
+                            <td>${user.join_date}</td>
+                            <td>${user.message_count || 0}</td>
+                            <td><a href="#" onclick="showUserDetail('${user.user_id}')" class="btn btn-sm btn-primary">查看</a></td>
+                        </tr>
+                    `;
+                });
+            }
+            
+            // 更新分页
+            const pagination = document.querySelector('#users-content .pagination');
+            pagination.innerHTML = '';
+            
+            // 上一页按钮
+            pagination.innerHTML += `
+                <li class="page-item ${page <= 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="#" ${page > 1 ? `onclick="loadUsersList(${page-1}, '${search}')"` : ''} tabindex="-1" aria-disabled="${page <= 1}">上一页</a>
+                </li>
+            `;
+            
+            // 页码按钮
+            for (let i = 1; i <= data.total_pages; i++) {
+                pagination.innerHTML += `
+                    <li class="page-item ${i === page ? 'active' : ''}">
+                        <a class="page-link" href="#" onclick="loadUsersList(${i}, '${search}')">${i}</a>
+                    </li>
+                `;
+            }
+            
+            // 下一页按钮
+            pagination.innerHTML += `
+                <li class="page-item ${page >= data.total_pages ? 'disabled' : ''}">
+                    <a class="page-link" href="#" ${page < data.total_pages ? `onclick="loadUsersList(${page+1}, '${search}')"` : ''}>下一页</a>
+                </li>
+            `;
+        }
+        
+        // 加载统计数据
+        async function loadStatistics() {
+            const data = await fetchAPI('/api/statistics');
+            if (!data) return;
+            
+            // 更新消息类型统计
+            const messageTypesTable = document.querySelector('#statistics-content .table:nth-of-type(1) tbody');
+            messageTypesTable.innerHTML = '';
+            
+            if (data.message_types && data.message_types.length > 0) {
+                data.message_types.forEach(type => {
+                    messageTypesTable.innerHTML += `
+                        <tr>
+                            <td>${type.message_type}</td>
+                            <td>${type.count}</td>
+                            <td>${type.percentage}%</td>
+                        </tr>
+                    `;
+                });
+            }
+            
+            // 更新每日消息统计
+            const dailyMessagesTable = document.querySelector('#statistics-content .table:nth-of-type(2) tbody');
+            dailyMessagesTable.innerHTML = '';
+            
+            if (data.daily_messages && data.daily_messages.length > 0) {
+                data.daily_messages.forEach(day => {
+                    dailyMessagesTable.innerHTML += `
+                        <tr>
+                            <td>${day.date}</td>
+                            <td>${day.count}</td>
+                        </tr>
+                    `;
+                });
+            }
+            
+            // 更新活跃用户排名
+            const activeUsersTable = document.querySelector('#statistics-content .table:nth-of-type(3) tbody');
+            activeUsersTable.innerHTML = '';
+            
+            if (data.active_users && data.active_users.length > 0) {
+                data.active_users.forEach((user, index) => {
+                    activeUsersTable.innerHTML += `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${user.user_id}</td>
+                            <td>${user.username || '无用户名'}</td>
+                            <td>${user.first_name} ${user.last_name || ''}</td>
+                            <td>${user.message_count}</td>
+                            <td><a href="#" onclick="showUserDetail('${user.user_id}')" class="btn btn-sm btn-primary">查看</a></td>
+                        </tr>
+                    `;
+                });
+            }
+        }
+        
+        // 加载用户详情数据
+        async function loadUserDetail(userId) {
+            const data = await fetchAPI(`/api/user/${userId}`);
+            if (!data || data.error) {
+                showFlashMessage('无法加载用户详情', 'danger');
+                return;
+            }
+            
+            // 更新用户信息
+            document.getElementById('user-detail-id').textContent = data.user.user_id;
+            document.getElementById('detail-user-id').textContent = data.user.user_id;
+            document.getElementById('detail-username').textContent = data.user.username || '无用户名';
+            document.getElementById('detail-name').textContent = `${data.user.first_name} ${data.user.last_name || ''}`;
+            document.getElementById('detail-join-date').textContent = data.user.join_date;
+            document.getElementById('detail-message-count').textContent = data.user.message_count || 0;
+            
+            // 清空并加载消息历史
+            const chatContainer = document.querySelector('#user-detail-content .chat-container');
+            chatContainer.innerHTML = '';
+            
+            if (data.messages && data.messages.length > 0) {
+                data.messages.forEach(msg => {
+                    const messageClass = msg.is_from_admin ? 'admin-message' : 'user-message';
+                    const sender = msg.is_from_admin ? '管理员' : `@${data.user.username || '用户'}`;
+                    const icon = msg.is_from_admin ? 'fas fa-user-shield' : 'fas fa-user';
+                    
+                    chatContainer.innerHTML += `
+                        <div class="message-box ${messageClass}">
+                            <div class="d-flex justify-content-between">
+                                <strong><i class="${icon}"></i> ${sender}</strong>
+                                <span class="text-muted">${msg.timestamp}</span>
+                            </div>
+                            <div class="mt-2">
+                                ${msg.content}
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                chatContainer.innerHTML = '<div class="alert alert-info">暂无消息记录</div>';
+            }
+            
+            // 更新发送消息表单的用户ID
+            document.querySelector('#send-message-form').setAttribute('data-user-id', userId);
+        }
+        
+        // 搜索用户
+        function searchUsers() {
+            const searchText = document.querySelector('#users-content input[type="search"]').value;
+            loadUsersList(1, searchText);
+            showFlashMessage(`正在搜索: ${searchText}`, 'info');
+        }
+        
+        // 登出
+        function logout() {
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('username');
+            window.location.href = 'index.html';
+        }
+        
         // 显示不同页面内容的函数
         function switchPage(pageName) {
             // 隐藏所有内容
@@ -796,12 +1122,15 @@
             if (pageName === 'dashboard') {
                 document.getElementById('dashboard-content').style.display = 'block';
                 document.getElementById('nav-dashboard').classList.add('active');
+                loadDashboardData(); // 加载仪表盘数据
             } else if (pageName === 'users') {
                 document.getElementById('users-content').style.display = 'block';
                 document.getElementById('nav-users').classList.add('active');
+                loadUsersList(); // 加载用户列表
             } else if (pageName === 'statistics') {
                 document.getElementById('statistics-content').style.display = 'block';
                 document.getElementById('nav-statistics').classList.add('active');
+                loadStatistics(); // 加载统计数据
             } else if (pageName === 'settings') {
                 document.getElementById('settings-content').style.display = 'block';
                 document.getElementById('nav-settings').classList.add('active');
@@ -810,6 +1139,9 @@
         
         // 显示用户详情
         function showUserDetail(userId) {
+            // 检查认证
+            if (!checkAuth()) return;
+            
             // 隐藏所有内容
             document.querySelectorAll('.page-content').forEach(content => {
                 content.style.display = 'none';
@@ -818,65 +1150,8 @@
             // 显示用户详情内容
             document.getElementById('user-detail-content').style.display = 'block';
             
-            // 设置用户ID（在实际应用中，这里应该通过AJAX获取用户详情）
-            document.getElementById('user-detail-id').textContent = userId;
-            document.getElementById('detail-user-id').textContent = userId;
-            
-            // 模拟数据填充
-            const userDetails = {
-                '12345678': { username: '@user1', name: '张三', joinDate: '2023-11-05 10:23', messageCount: 15 },
-                '23456789': { username: '@user2', name: '李四', joinDate: '2023-11-05 09:15', messageCount: 8 },
-                '34567890': { username: '@user3', name: '王五', joinDate: '2023-11-04 18:42', messageCount: 12 },
-                '45678901': { username: '@user4', name: '赵六', joinDate: '2023-11-04 15:37', messageCount: 5 },
-                '56789012': { username: '@user5', name: '钱七', joinDate: '2023-11-04 11:20', messageCount: 20 }
-            };
-            
-            if (userDetails[userId]) {
-                document.getElementById('detail-username').textContent = userDetails[userId].username;
-                document.getElementById('detail-name').textContent = userDetails[userId].name;
-                document.getElementById('detail-join-date').textContent = userDetails[userId].joinDate;
-                document.getElementById('detail-message-count').textContent = userDetails[userId].messageCount;
-            }
-        }
-        
-        // 发送消息
-        function sendMessage() {
-            const messageText = document.getElementById('message').value;
-            if (messageText.trim() === '') {
-                showFlashMessage('消息内容不能为空', 'warning');
-                return;
-            }
-            
-            // 在真实系统中，这里会发送AJAX请求
-            showFlashMessage('消息发送成功', 'success');
-            
-            // 添加到消息历史
-            const chatContainer = document.querySelector('#user-detail-content .chat-container');
-            const now = new Date();
-            const timeString = now.toLocaleString('zh-CN');
-            
-            const adminMessage = document.createElement('div');
-            adminMessage.className = 'message-box admin-message';
-            adminMessage.innerHTML = `
-                <div class="d-flex justify-content-between">
-                    <strong><i class="fas fa-user-shield"></i> 管理员</strong>
-                    <span class="text-muted">${timeString}</span>
-                </div>
-                <div class="mt-2">
-                    ${messageText}
-                </div>
-            `;
-            
-            chatContainer.appendChild(adminMessage);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-            document.getElementById('message').value = '';
-        }
-        
-        // 搜索用户
-        function searchUsers() {
-            const searchText = document.querySelector('#users-content input[type="search"]').value;
-            showFlashMessage(`正在搜索: ${searchText}`, 'info');
-            // 这里应该是实际的搜索逻辑，现在只是示例
+            // 加载用户详情数据
+            loadUserDetail(userId);
         }
         
         // 显示Flash消息
@@ -897,8 +1172,39 @@
             }, 3000);
         }
         
-        // 页面加载时默认显示仪表盘
+        // 页面加载时检查认证并加载仪表盘
         document.addEventListener('DOMContentLoaded', function() {
+            // 检查认证
+            if (!checkAuth()) return;
+            
+            // 显示登录用户名（如果有）
+            const username = localStorage.getItem('username');
+            if (username) {
+                const loginInfo = document.createElement('div');
+                loginInfo.className = 'navbar-text text-white px-3';
+                loginInfo.innerHTML = `<i class="fas fa-user"></i> ${username}`;
+                document.querySelector('.navbar-nav').prepend(loginInfo);
+            }
+            
+            // 绑定登出按钮
+            document.querySelector('.navbar-nav .nav-link').addEventListener('click', function(e) {
+                e.preventDefault();
+                logout();
+            });
+            
+            // 绑定发送消息表单
+            document.querySelector('#send-message-form button').addEventListener('click', function(e) {
+                e.preventDefault();
+                sendMessage();
+            });
+            
+            // 绑定用户搜索
+            document.querySelector('#users-content button').addEventListener('click', function(e) {
+                e.preventDefault();
+                searchUsers();
+            });
+            
+            // 默认显示仪表盘
             switchPage('dashboard');
         });
     </script>
