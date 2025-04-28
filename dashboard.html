@@ -122,8 +122,9 @@
         </button>
         <div class="w-100"></div>
         <div class="navbar-nav">
-            <div class="nav-item text-nowrap">
-                <a class="nav-link px-3" href="index.html">退出登录</a>
+            <div class="nav-item text-nowrap d-flex align-items-center">
+                <span id="current-username" class="text-white me-3"></span>
+                <a class="nav-link px-3" href="#" onclick="logout(); return false;">退出登录</a>
             </div>
         </div>
     </header>
@@ -726,125 +727,526 @@
     <!-- Bootstrap JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // 登录状态检查
-        document.addEventListener('DOMContentLoaded', function() {
-            const token = localStorage.getItem('auth_token');
+        // API地址配置
+        const API_BASE_URL = 'http://localhost:5000'; // 替换为您的后端API地址
+        
+        // 检查用户是否已登录
+        function checkAuth() {
+            const token = localStorage.getItem('token');
             if (!token) {
-                // 未登录，重定向到登录页
+                // 未登录，跳转到登录页
                 window.location.href = 'index.html';
+                return false;
             }
             
-            // 显示登录用户名（如果有）
-            const username = localStorage.getItem('username');
-            if (username) {
-                const loginInfo = document.createElement('div');
-                loginInfo.className = 'navbar-text text-white px-3';
-                loginInfo.innerHTML = `<i class="fas fa-user"></i> ${username}`;
-                document.querySelector('.navbar-nav').prepend(loginInfo);
+            // 显示用户名
+            const username = localStorage.getItem('username') || '管理员';
+            document.getElementById('current-username').textContent = username;
+            
+            return true;
+        }
+        
+        // 检查登录状态
+        if (!checkAuth()) {
+            // 函数内部已处理跳转
+        }
+        
+        // 通用API请求函数
+        async function fetchAPI(endpoint, options = {}) {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = 'index.html';
+                return null;
             }
             
-            // 绑定登出按钮
-            document.querySelector('.navbar-nav .nav-link').addEventListener('click', function(e) {
-                e.preventDefault();
-                logout();
+            // 离线模式处理
+            if (token === 'offline_demo_token') {
+                return getMockData(endpoint);
+            }
+            
+            // 设置默认请求头
+            const headers = {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                ...options.headers
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                    ...options,
+                    headers
+                });
+                
+                // 检查是否需要重新登录 (401 Unauthorized)
+                if (response.status === 401) {
+                    showFlashMessage('登录已过期，请重新登录', 'danger');
+                    setTimeout(() => {
+                        localStorage.removeItem('token');
+                        window.location.href = 'index.html';
+                    }, 2000);
+                    return null;
+                }
+                
+                const data = await response.json();
+                return data;
+                
+            } catch (error) {
+                console.error(`API请求失败 ${endpoint}:`, error);
+                showFlashMessage('API请求失败，可能是网络问题或服务器离线', 'danger');
+                return null;
+            }
+        }
+        
+        // 发送消息API
+        async function sendMessageAPI(userId, message) {
+            if (!userId || !message) {
+                showFlashMessage('用户ID和消息内容不能为空', 'danger');
+                return false;
+            }
+            
+            const result = await fetchAPI('/api/send_message', {
+                method: 'POST',
+                body: JSON.stringify({
+                    user_id: userId,
+                    message: message
+                })
             });
             
-            // 默认加载仪表盘
-            switchPage('dashboard');
-        });
-        
-        // 登出函数
-        function logout() {
-            localStorage.removeItem('auth_token');
-            localStorage.removeItem('username');
-            window.location.href = 'index.html';
+            if (result && result.success) {
+                showFlashMessage(result.telegram_delivered ? 
+                    '消息已发送到用户' : 
+                    '消息已保存，但无法发送至Telegram（可能是API密钥问题）', 
+                    result.telegram_delivered ? 'success' : 'warning'
+                );
+                return true;
+            } else {
+                showFlashMessage(result ? `发送失败: ${result.message}` : '发送失败：服务器错误', 'danger');
+                return false;
+            }
         }
         
-        // 搜索用户
-        function searchUsers() {
-            // 在实际应用中会发送API请求搜索用户
-            const searchText = document.querySelector('#users-content input[type="search"]').value;
-            showFlashMessage(`正在搜索用户: ${searchText}`, 'info');
+        // 模拟数据（离线模式使用）
+        function getMockData(endpoint) {
+            const mockResponses = {
+                '/api/dashboard': {
+                    success: true,
+                    stats: {
+                        total_users: 248,
+                        total_messages: 3120,
+                        new_users_today: 12,
+                        response_rate: 94.5
+                    },
+                    recent_users: [
+                        {user_id: 12345678, username: 'user1', name: 'User One', join_date: '2023-05-15 10:30:22'},
+                        {user_id: 87654321, username: 'user2', name: 'User Two', join_date: '2023-05-14 16:45:10'},
+                        {user_id: 56781234, username: 'user3', name: 'User Three', join_date: '2023-05-14 09:20:47'},
+                        {user_id: 43218765, username: 'user4', name: 'User Four', join_date: '2023-05-13 22:10:35'},
+                        {user_id: 98761234, username: 'user5', name: 'User Five', join_date: '2023-05-13 14:55:18'}
+                    ],
+                    recent_messages: [
+                        {id: 1, user_id: 12345678, username: 'user1', name: 'User One', message_type: 'text', content: '您好，请问有人在吗？', timestamp: '2023-05-15 11:30:22', is_from_admin: false},
+                        {id: 2, user_id: 12345678, username: 'user1', name: 'User One', message_type: 'text', content: '您好！有什么可以帮助您的？', timestamp: '2023-05-15 11:32:15', is_from_admin: true},
+                        {id: 3, user_id: 87654321, username: 'user2', name: 'User Two', message_type: 'text', content: '我需要技术支持', timestamp: '2023-05-15 10:45:30', is_from_admin: false},
+                        {id: 4, user_id: 87654321, username: 'user2', name: 'User Two', message_type: 'text', content: '请详细描述您遇到的问题，我们会尽快协助您', timestamp: '2023-05-15 10:50:12', is_from_admin: true},
+                        {id: 5, user_id: 56781234, username: 'user3', name: 'User Three', message_type: 'photo', content: '用户发送了一张图片', timestamp: '2023-05-15 09:35:56', is_from_admin: false}
+                    ]
+                },
+                '/api/users': {
+                    success: true,
+                    users: [
+                        {user_id: 12345678, username: 'user1', first_name: 'User', last_name: 'One', join_date: '2023-05-15 10:30:22', message_count: 15},
+                        {user_id: 87654321, username: 'user2', first_name: 'User', last_name: 'Two', join_date: '2023-05-14 16:45:10', message_count: 8},
+                        {user_id: 56781234, username: 'user3', first_name: 'User', last_name: 'Three', join_date: '2023-05-14 09:20:47', message_count: 6},
+                        {user_id: 43218765, username: 'user4', first_name: 'User', last_name: 'Four', join_date: '2023-05-13 22:10:35', message_count: 4},
+                        {user_id: 98761234, username: 'user5', first_name: 'User', last_name: 'Five', join_date: '2023-05-13 14:55:18', message_count: 3}
+                    ]
+                },
+                '/api/statistics': {
+                    success: true,
+                    message_types: [
+                        {type: 'text', count: 2450},
+                        {type: 'photo', count: 430},
+                        {type: 'document', count: 120},
+                        {type: 'voice', count: 85},
+                        {type: 'video', count: 35}
+                    ],
+                    daily_messages: [
+                        {date: '2023-05-15', count: 120},
+                        {date: '2023-05-14', count: 145},
+                        {date: '2023-05-13', count: 98},
+                        {date: '2023-05-12', count: 110},
+                        {date: '2023-05-11', count: 105},
+                        {date: '2023-05-10', count: 130},
+                        {date: '2023-05-09', count: 115}
+                    ],
+                    active_users: [
+                        {user_id: 12345678, username: 'user1', name: 'User One', message_count: 15},
+                        {user_id: 87654321, username: 'user2', name: 'User Two', message_count: 8},
+                        {user_id: 56781234, username: 'user3', name: 'User Three', message_count: 6},
+                        {user_id: 43218765, username: 'user4', name: 'User Four', message_count: 4},
+                        {user_id: 98761234, username: 'user5', name: 'User Five', message_count: 3}
+                    ]
+                }
+            };
+            
+            // 处理获取单个用户详情
+            if (endpoint.startsWith('/api/user/')) {
+                const userId = endpoint.split('/').pop();
+                return {
+                    success: true,
+                    user: {
+                        user_id: parseInt(userId),
+                        username: `user${userId.substring(0, 1)}`,
+                        first_name: 'User',
+                        last_name: `${userId.substring(0, 1) === '1' ? 'One' : userId.substring(0, 1) === '8' ? 'Two' : 'Three'}`,
+                        join_date: '2023-05-15 10:30:22'
+                    },
+                    messages: [
+                        {id: 1, message_type: 'text', content: '您好，请问有人在吗？', timestamp: '2023-05-15 11:30:22', is_from_admin: false},
+                        {id: 2, message_type: 'text', content: '您好！有什么可以帮助您的？', timestamp: '2023-05-15 11:32:15', is_from_admin: true},
+                        {id: 3, message_type: 'text', content: '我想了解产品的价格', timestamp: '2023-05-15 11:35:10', is_from_admin: false},
+                        {id: 4, message_type: 'text', content: '我们的产品价格在官网上有详细说明，您可以访问 example.com/pricing 查看', timestamp: '2023-05-15 11:40:05', is_from_admin: true},
+                        {id: 5, message_type: 'text', content: '谢谢，我现在去看看', timestamp: '2023-05-15 11:42:30', is_from_admin: false}
+                    ]
+                };
+            }
+            
+            // 处理发送消息
+            if (endpoint === '/api/send_message') {
+                return {
+                    success: true,
+                    message: '消息已发送并保存',
+                    telegram_delivered: true
+                };
+            }
+            
+            // 默认返回
+            return mockResponses[endpoint] || {success: false, message: '未找到模拟数据'};
         }
         
-        // 显示用户详情
-        function showUserDetail(userId) {
-            // 隐藏所有内容
-            document.querySelectorAll('.page-content').forEach(content => {
-                content.style.display = 'none';
-            });
+        // 加载仪表盘数据
+        async function loadDashboardData() {
+            const data = await fetchAPI('/api/dashboard');
             
-            // 显示用户详情
-            document.getElementById('user-detail-content').style.display = 'block';
-            
-            // 更新用户详情页的用户ID
-            document.getElementById('user-detail-id').textContent = userId;
-            document.getElementById('detail-user-id').textContent = userId;
-            
-            // 在实际应用中会发送API请求获取用户详情
-            showFlashMessage(`正在加载用户ID: ${userId} 的详情`, 'info');
-            
-            // 设置发送消息表单的用户ID
-            document.getElementById('send-message-form').setAttribute('data-user-id', userId);
-        }
-        
-        // 发送消息
-        function sendMessage() {
-            const messageForm = document.getElementById('send-message-form');
-            const userId = messageForm.getAttribute('data-user-id');
-            const messageText = document.getElementById('message').value.trim();
-            
-            if (!messageText) {
-                showFlashMessage('消息内容不能为空', 'warning');
+            if (!data || !data.success) {
+                showFlashMessage('无法加载仪表盘数据', 'danger');
                 return;
             }
             
-            // 在实际应用中会发送API请求发送消息
-            showFlashMessage('消息发送成功', 'success');
+            // 更新统计数据
+            document.getElementById('total-users').textContent = data.stats.total_users;
+            document.getElementById('total-messages').textContent = data.stats.total_messages;
+            document.getElementById('new-users-today').textContent = data.stats.new_users_today;
+            document.getElementById('response-rate').textContent = data.stats.response_rate + '%';
             
-            // 清空消息输入框
-            document.getElementById('message').value = '';
+            // 更新最近用户
+            const recentUsersTable = document.getElementById('recent-users-table');
+            recentUsersTable.innerHTML = ''; // 清空表格
             
-            // 将发送的消息添加到消息历史中
-            const chatContainer = document.querySelector('.chat-container');
-            const now = new Date();
-            const timeString = now.toLocaleString('zh-CN');
+            data.recent_users.forEach(user => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><a href="#" onclick="loadUserDetail(${user.user_id}); return false;">${user.user_id}</a></td>
+                    <td>${user.username ? '@' + user.username : '无用户名'}</td>
+                    <td>${user.name}</td>
+                    <td>${user.join_date}</td>
+                `;
+                recentUsersTable.appendChild(row);
+            });
             
-            const newMessage = document.createElement('div');
-            newMessage.className = 'message-box admin-message';
-            newMessage.innerHTML = `
-                <div class="d-flex justify-content-between">
-                    <strong><i class="fas fa-user-shield"></i> 管理员</strong>
-                    <span class="text-muted">${timeString}</span>
-                </div>
-                <div class="mt-2">
-                    ${messageText}
+            // 更新最近消息
+            const recentMessagesContainer = document.getElementById('recent-messages');
+            recentMessagesContainer.innerHTML = ''; // 清空容器
+            
+            data.recent_messages.forEach(msg => {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message-box ${msg.is_from_admin ? 'admin-message' : 'user-message'}`;
+                
+                let contentHtml = '';
+                if (msg.message_type === 'text') {
+                    contentHtml = msg.content;
+                } else if (msg.message_type === 'photo') {
+                    contentHtml = `<i class="fas fa-image"></i> ${msg.content}`;
+                } else if (msg.message_type === 'document') {
+                    contentHtml = `<i class="fas fa-file"></i> ${msg.content}`;
+                } else if (msg.message_type === 'voice') {
+                    contentHtml = `<i class="fas fa-microphone"></i> ${msg.content}`;
+                } else if (msg.message_type === 'video') {
+                    contentHtml = `<i class="fas fa-video"></i> ${msg.content}`;
+                } else {
+                    contentHtml = `<i class="fas fa-question-circle"></i> ${msg.content}`;
+                }
+                
+                messageDiv.innerHTML = `
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <strong>${msg.is_from_admin ? '客服' : '用户'}</strong>
+                            ${msg.is_from_admin ? '' : `<a href="#" class="ms-2" onclick="loadUserDetail(${msg.user_id}); return false;"><i class="fas fa-external-link-alt"></i></a>`}
+                        </div>
+                        <small class="text-muted">${msg.timestamp}</small>
+                    </div>
+                    <div class="mt-2">${contentHtml}</div>
+                `;
+                recentMessagesContainer.appendChild(messageDiv);
+            });
+        }
+        
+        // 获取用户列表
+        async function loadUsersList(searchTerm = '') {
+            const endpoint = searchTerm ? `/api/users?search=${encodeURIComponent(searchTerm)}` : '/api/users';
+            const data = await fetchAPI(endpoint);
+            
+            if (!data || !data.success) {
+                showFlashMessage('无法加载用户列表', 'danger');
+                return;
+            }
+            
+            const usersTable = document.getElementById('users-table-body');
+            usersTable.innerHTML = ''; // 清空表格
+            
+            if (data.users.length === 0) {
+                usersTable.innerHTML = `<tr><td colspan="6" class="text-center">没有找到用户</td></tr>`;
+                return;
+            }
+            
+            data.users.forEach(user => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${user.user_id}</td>
+                    <td>${user.username ? '@' + user.username : '无用户名'}</td>
+                    <td>${user.first_name} ${user.last_name || ''}</td>
+                    <td>${user.join_date}</td>
+                    <td>${user.message_count}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="loadUserDetail(${user.user_id})">
+                            查看
+                        </button>
+                    </td>
+                `;
+                usersTable.appendChild(row);
+            });
+        }
+        
+        // 获取统计数据
+        async function loadStatistics() {
+            const data = await fetchAPI('/api/statistics');
+            
+            if (!data || !data.success) {
+                showFlashMessage('无法加载统计数据', 'danger');
+                return;
+            }
+            
+            // 消息类型统计
+            const messageTypesTable = document.getElementById('message-types-table');
+            messageTypesTable.innerHTML = ''; // 清空表格
+            
+            data.message_types.forEach(item => {
+                const row = document.createElement('tr');
+                let typeName = '未知';
+                
+                switch(item.type) {
+                    case 'text': typeName = '文本'; break;
+                    case 'photo': typeName = '图片'; break;
+                    case 'document': typeName = '文件'; break;
+                    case 'voice': typeName = '语音'; break;
+                    case 'video': typeName = '视频'; break;
+                    default: typeName = item.type; break;
+                }
+                
+                row.innerHTML = `
+                    <td>${typeName}</td>
+                    <td>${item.count}</td>
+                `;
+                messageTypesTable.appendChild(row);
+            });
+            
+            // 每日消息统计
+            const dailyMessagesTable = document.getElementById('daily-messages-table');
+            dailyMessagesTable.innerHTML = ''; // 清空表格
+            
+            data.daily_messages.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.date}</td>
+                    <td>${item.count}</td>
+                `;
+                dailyMessagesTable.appendChild(row);
+            });
+            
+            // 活跃用户排行
+            const activeUsersTable = document.getElementById('active-users-table');
+            activeUsersTable.innerHTML = ''; // 清空表格
+            
+            data.active_users.forEach((user, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td><a href="#" onclick="loadUserDetail(${user.user_id}); return false;">${user.user_id}</a></td>
+                    <td>${user.username ? '@' + user.username : '无用户名'}</td>
+                    <td>${user.name}</td>
+                    <td>${user.message_count}</td>
+                `;
+                activeUsersTable.appendChild(row);
+            });
+        }
+        
+        // 加载用户详情
+        async function loadUserDetail(userId) {
+            // 切换到用户详情页面
+            switchPage('user-detail');
+            
+            // 显示加载状态
+            document.getElementById('user-detail-content').innerHTML = `
+                <div class="text-center p-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">加载中...</span>
+                    </div>
+                    <p class="mt-2">正在加载用户数据...</p>
                 </div>
             `;
             
-            chatContainer.appendChild(newMessage);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
+            const data = await fetchAPI(`/api/user/${userId}`);
+            
+            if (!data || !data.success) {
+                document.getElementById('user-detail-content').innerHTML = `
+                    <div class="alert alert-danger">
+                        无法加载用户数据。${data ? data.message : '服务器错误'}
+                    </div>
+                `;
+                return;
+            }
+            
+            const user = data.user;
+            const messages = data.messages;
+            
+            // 更新用户详情
+            const messageHistoryHTML = messages.length > 0
+                ? messages.map(msg => `
+                    <div class="message-box ${msg.is_from_admin ? 'admin-message' : 'user-message'} mb-3">
+                        <div class="d-flex justify-content-between">
+                            <strong>${msg.is_from_admin ? '客服' : '用户'}</strong>
+                            <small class="text-muted">${msg.timestamp}</small>
+                        </div>
+                        <div class="mt-2">
+                            ${msg.message_type === 'text' ? msg.content : `<i class="fas fa-${messageTypeIcon(msg.message_type)}"></i> ${msg.content}`}
+                        </div>
+                    </div>
+                `).join('')
+                : '<div class="alert alert-info">暂无消息历史</div>';
+            
+            document.getElementById('user-detail-content').innerHTML = `
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2"><i class="fas fa-user"></i> 用户详情</h1>
+                    <button class="btn btn-outline-secondary" onclick="switchPage('users')">
+                        <i class="fas fa-arrow-left"></i> 返回用户列表
+                    </button>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">用户信息</h5>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>用户ID:</strong> ${user.user_id}</p>
+                                <p><strong>用户名:</strong> ${user.username ? '@' + user.username : '无'}</p>
+                                <p><strong>姓名:</strong> ${user.first_name} ${user.last_name || ''}</p>
+                                <p><strong>加入时间:</strong> ${user.join_date}</p>
+                                <p><strong>消息数量:</strong> ${messages.length}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">发送消息</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="send-message-form" onsubmit="event.preventDefault(); sendUserMessage(${user.user_id});">
+                                    <div class="mb-3">
+                                        <textarea class="form-control" id="message-content" rows="4" placeholder="输入消息..." required></textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-paper-plane"></i> 发送
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">消息历史</h5>
+                    </div>
+                    <div class="card-body chat-container">
+                        ${messageHistoryHTML}
+                    </div>
+                </div>
+            `;
         }
         
-        // 显示不同页面内容的函数
-        function switchPage(pageName) {
-            // 隐藏所有内容
-            document.querySelectorAll('.page-content').forEach(content => {
-                content.style.display = 'none';
-            });
+        // 发送消息给用户
+        async function sendUserMessage(userId) {
+            const messageContent = document.getElementById('message-content').value.trim();
+            if (!messageContent) return;
             
-            // 移除所有导航项的active类
-            document.querySelectorAll('.sidebar .nav-link').forEach(link => {
-                link.classList.remove('active');
-            });
+            const sent = await sendMessageAPI(userId, messageContent);
             
-            // 显示选定的内容
-            document.getElementById(`${pageName}-content`).style.display = 'block';
-            document.getElementById(`nav-${pageName}`).classList.add('active');
+            if (sent) {
+                // 清空消息框
+                document.getElementById('message-content').value = '';
+                
+                // 刷新用户详情页以显示新消息
+                setTimeout(() => loadUserDetail(userId), 1000);
+            }
         }
         
-        // 显示Flash消息
-        function showFlashMessage(message, type) {
+        // 根据消息类型返回图标
+        function messageTypeIcon(type) {
+            switch(type) {
+                case 'photo': return 'image';
+                case 'document': return 'file';
+                case 'voice': return 'microphone';
+                case 'video': return 'video';
+                default: return 'comment';
+            }
+        }
+        
+        // 切换页面
+        function switchPage(page) {
+            // 隐藏所有页面
+            document.querySelectorAll('.page-content').forEach(el => {
+                el.style.display = 'none';
+            });
+            
+            // 移除所有活动导航项
+            document.querySelectorAll('.nav-link').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            // 显示选定页面
+            if (page === 'user-detail') {
+                document.getElementById('user-detail-content').style.display = 'block';
+                document.getElementById('nav-users').classList.add('active');
+            } else {
+                document.getElementById(`${page}-content`).style.display = 'block';
+                document.getElementById(`nav-${page}`).classList.add('active');
+                
+                // 加载相应页面数据
+                if (page === 'dashboard') {
+                    loadDashboardData();
+                } else if (page === 'users') {
+                    loadUsersList();
+                } else if (page === 'statistics') {
+                    loadStatistics();
+                }
+            }
+        }
+        
+        // 显示通知消息
+        function showFlashMessage(message, type = 'info') {
             const flashContainer = document.getElementById('flash-messages');
             const alertDiv = document.createElement('div');
             alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
@@ -854,12 +1256,34 @@
             `;
             flashContainer.appendChild(alertDiv);
             
-            // 自动关闭
+            // 自动消失
             setTimeout(() => {
-                const alert = new bootstrap.Alert(alertDiv);
-                alert.close();
-            }, 3000);
+                alertDiv.classList.remove('show');
+                setTimeout(() => {
+                    alertDiv.remove();
+                }, 300);
+            }, 5000);
         }
+        
+        // 用户搜索
+        document.getElementById('user-search-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const searchTerm = document.getElementById('user-search').value.trim();
+            loadUsersList(searchTerm);
+        });
+        
+        // 退出登录
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('username');
+            localStorage.removeItem('offlineMode');
+            window.location.href = 'index.html';
+        }
+        
+        // 页面加载完成，初始化仪表盘
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboardData();
+        });
     </script>
 </body>
 </html>
