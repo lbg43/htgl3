@@ -91,8 +91,10 @@
     <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // API地址配置
-        const API_BASE_URL = 'http://localhost:5000'; // 修改为您的后端API地址
+        // API地址配置 - 智能检测访问方式
+        const API_BASE_URL = window.location.protocol === 'file:' 
+            ? 'http://47.83.167.83:5000'  // 直接打开HTML文件时使用服务器地址
+            : window.location.origin;       // 通过服务器访问时使用当前地址
         
         document.addEventListener('DOMContentLoaded', function() {
             const loginForm = document.getElementById('loginForm');
